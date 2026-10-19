@@ -1,0 +1,7 @@
+# ML-Agents trainer for com.unity.ml-agents 4.0.x (Python 3.10.12, see .venv).
+# grpcio 1.48.2 (pinned by mlagents) has no Apple Silicon wheel, so install with an override:
+#   echo "grpcio==1.62.3" > /tmp/overrides.txt
+#   uv pip install --python .venv/bin/python --override /tmp/overrides.txt -r requirements-training.txt
+mlagents==1.1.0
+torch==2.2.2   # newer torch needs onnxscript for the ONNX export mlagents 1.1 uses
+setuptools<75  # mlagents still imports pkg_resources
