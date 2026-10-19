@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>delivery_bot</name>
+  <version>0.2.0</version>
+  <description>URDF description of the 3D-printed Delivery-Bot (Fusion model Delivery-Bot-Body-02, V-0.2)</description>
+  <maintainer email="leonstiffel@gmail.com">Leon Stiffel</maintainer>
+  <license>Proprietary</license>
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

@@ -1,0 +1,389 @@
+<?xml version="1.0"?>
+<!-- Delivery-Bot (Fusion model Delivery-Bot-Body-02, V-0.2)
+     Frame convention: x = forward, y = left, z = up, metres. base_link origin = ground point below the rear axle centre.
+     Fusion parts named "..._Right" are on the robot's LEFT side (+y) and vice versa.
+     Actuated joints: 2x steering (DS5160 servo, position), 4x hub-motor wheels (velocity).
+     Passive joints: 4x suspension (trailing arms with spring/damper - set stiffness/damping in the simulator).
+     The lid-lock servo (MZ996) is intentionally NOT modelled as an actuator. -->
+<robot name="delivery_bot">
+  <material name="body_white"><color rgba="0.92 0.90 0.85 1"/></material>
+  <material name="part_grey"><color rgba="0.35 0.36 0.38 1"/></material>
+  <material name="wheel_grey"><color rgba="0.25 0.25 0.25 1"/></material>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.2364 0.0095 0.2697" rpy="0 0 0"/>
+      <mass value="15.497"/>
+      <inertia ixx="0.63925" ixy="0" ixz="0" iyy="0.82522" iyz="0" izz="0.93912"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.5750 0.0000 0.2100" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/base.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="body_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0.2450 0.0000 0.3480" rpy="0 0 0"/>
+      <geometry><box size="0.660 0.540 0.346"/></geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.2450 0.0000 0.1250" rpy="0 0 0"/>
+      <geometry><box size="0.600 0.300 0.100"/></geometry>
+    </collision>
+  </link>
+  <link name="front_left_arm">
+    <inertial>
+      <origin xyz="0.1553 0.0000 -0.0598" rpy="0 0 0"/>
+      <mass value="0.896"/>
+      <inertia ixx="0.00346" ixy="0" ixz="0" iyy="0.00777" iyz="0" izz="0.00714"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.2800 -0.1397 0.0341" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/front_arm_R.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="front_left_steering">
+    <inertial>
+      <origin xyz="-0.0128 0.0081 -0.0002" rpy="0 0 0"/>
+      <mass value="0.084"/>
+      <inertia ixx="0.00003" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0650 -0.1980 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/steer_R.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="front_left_wheel">
+    <inertial>
+      <origin xyz="0.0000 0.0000 0.0000" rpy="0 0 0"/>
+      <mass value="2.800"/>
+      <inertia ixx="0.00574" ixy="0" ixz="0" iyy="0.01012" iyz="0" izz="0.00574"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0850 -0.2425 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/wheel_front_R.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="wheel_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.085" length="0.054"/></geometry>
+    </collision>
+  </link>
+  <link name="rear_left_arm">
+    <inertial>
+      <origin xyz="-0.1051 -0.0241 -0.0328" rpy="0 0 0"/>
+      <mass value="0.377"/>
+      <inertia ixx="0.00094" ixy="0" ixz="0" iyy="0.00199" iyz="0" izz="0.00155"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.4200 -0.2010 0.0527" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/rear_arm_R.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="rear_left_wheel">
+    <inertial>
+      <origin xyz="0.0000 0.0000 0.0000" rpy="0 0 0"/>
+      <mass value="2.800"/>
+      <inertia ixx="0.00574" ixy="0" ixz="0" iyy="0.01012" iyz="0" izz="0.00574"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.5750 -0.2425 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/wheel_rear_R.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="wheel_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.085" length="0.054"/></geometry>
+    </collision>
+  </link>
+  <link name="front_right_arm">
+    <inertial>
+      <origin xyz="0.1553 0.0000 -0.0598" rpy="0 0 0"/>
+      <mass value="0.896"/>
+      <inertia ixx="0.00346" ixy="0" ixz="0" iyy="0.00777" iyz="0" izz="0.00714"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.2800 0.1397 0.0341" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/front_arm_L.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="front_right_steering">
+    <inertial>
+      <origin xyz="-0.0128 -0.0081 -0.0002" rpy="0 0 0"/>
+      <mass value="0.084"/>
+      <inertia ixx="0.00003" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0650 0.1980 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/steer_L.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="front_right_wheel">
+    <inertial>
+      <origin xyz="0.0000 0.0000 0.0000" rpy="0 0 0"/>
+      <mass value="2.800"/>
+      <inertia ixx="0.00574" ixy="0" ixz="0" iyy="0.01012" iyz="0" izz="0.00574"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0850 0.2425 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/wheel_front_L.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="wheel_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.085" length="0.054"/></geometry>
+    </collision>
+  </link>
+  <link name="rear_right_arm">
+    <inertial>
+      <origin xyz="-0.1051 0.0241 -0.0328" rpy="0 0 0"/>
+      <mass value="0.377"/>
+      <inertia ixx="0.00094" ixy="0" ixz="0" iyy="0.00199" iyz="0" izz="0.00155"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.4200 0.2010 0.0527" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/rear_arm_L.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="part_grey"/>
+    </visual>
+  </link>
+  <link name="rear_right_wheel">
+    <inertial>
+      <origin xyz="0.0000 0.0000 0.0000" rpy="0 0 0"/>
+      <mass value="2.800"/>
+      <inertia ixx="0.00574" ixy="0" ixz="0" iyy="0.01012" iyz="0" izz="0.00574"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.5750 0.2425 0.1250" rpy="0 0 1.5708"/>
+      <geometry><mesh filename="package://delivery_bot/meshes/wheel_rear_L.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="wheel_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.085" length="0.054"/></geometry>
+    </collision>
+  </link>
+  <joint name="front_left_suspension_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="front_left_arm"/>
+    <origin xyz="0.2950 0.1397 0.1759" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.122" upper="0.140" effort="200.0" velocity="5.0"/>
+    <dynamics damping="2.00" friction="0.10"/>
+  </joint>
+  <joint name="front_left_steering_joint" type="revolute">
+    <parent link="front_left_arm"/>
+    <child link="front_left_steering"/>
+    <origin xyz="0.2150 0.0583 -0.0909" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.349" upper="0.454" effort="5.9" velocity="7.0"/>
+    <dynamics damping="0.05" friction="0.05"/>
+  </joint>
+  <joint name="front_left_wheel_joint" type="continuous">
+    <parent link="front_left_steering"/>
+    <child link="front_left_wheel"/>
+    <origin xyz="-0.0200 0.0445 0.0000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="10.0" velocity="35.0"/>
+    <dynamics damping="0.01" friction="0.02"/>
+  </joint>
+  <joint name="rear_left_suspension_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="rear_left_arm"/>
+    <origin xyz="0.1550 0.2010 0.1573" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.175" upper="0.175" effort="200.0" velocity="5.0"/>
+    <dynamics damping="2.00" friction="0.10"/>
+  </joint>
+  <joint name="rear_left_wheel_joint" type="continuous">
+    <parent link="rear_left_arm"/>
+    <child link="rear_left_wheel"/>
+    <origin xyz="-0.1550 0.0415 -0.0723" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="10.0" velocity="35.0"/>
+    <dynamics damping="0.01" friction="0.02"/>
+  </joint>
+  <joint name="front_right_suspension_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="front_right_arm"/>
+    <origin xyz="0.2950 -0.1397 0.1759" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.122" upper="0.140" effort="200.0" velocity="5.0"/>
+    <dynamics damping="2.00" friction="0.10"/>
+  </joint>
+  <joint name="front_right_steering_joint" type="revolute">
+    <parent link="front_right_arm"/>
+    <child link="front_right_steering"/>
+    <origin xyz="0.2150 -0.0583 -0.0909" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.454" upper="0.349" effort="5.9" velocity="7.0"/>
+    <dynamics damping="0.05" friction="0.05"/>
+  </joint>
+  <joint name="front_right_wheel_joint" type="continuous">
+    <parent link="front_right_steering"/>
+    <child link="front_right_wheel"/>
+    <origin xyz="-0.0200 -0.0445 0.0000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="10.0" velocity="35.0"/>
+    <dynamics damping="0.01" friction="0.02"/>
+  </joint>
+  <joint name="rear_right_suspension_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="rear_right_arm"/>
+    <origin xyz="0.1550 -0.2010 0.1573" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.175" upper="0.175" effort="200.0" velocity="5.0"/>
+    <dynamics damping="2.00" friction="0.10"/>
+  </joint>
+  <joint name="rear_right_wheel_joint" type="continuous">
+    <parent link="rear_right_arm"/>
+    <child link="rear_right_wheel"/>
+    <origin xyz="-0.1550 -0.0415 -0.0723" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="10.0" velocity="35.0"/>
+    <dynamics damping="0.01" friction="0.02"/>
+  </joint>
+  <link name="lidar_link"/>
+  <joint name="lidar_link_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.4550 0.0000 0.5146" rpy="0 0 0.0000"/>
+  </joint>
+  <link name="stereo_camera_link"/>
+  <joint name="stereo_camera_link_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stereo_camera_link"/>
+    <origin xyz="0.5510 0.0000 0.4180" rpy="0 0 0.0000"/>
+  </joint>
+  <link name="stereo_left_camera"/>
+  <joint name="stereo_left_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stereo_left_camera"/>
+    <origin xyz="0.5510 0.0310 0.4180" rpy="0 0 0.0000"/>
+  </joint>
+  <link name="stereo_left_camera_optical_frame"/>
+  <joint name="stereo_left_camera_optical_joint" type="fixed">
+    <parent link="stereo_left_camera"/>
+    <child link="stereo_left_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+  <link name="stereo_right_camera"/>
+  <joint name="stereo_right_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stereo_right_camera"/>
+    <origin xyz="0.5510 -0.0310 0.4180" rpy="0 0 0.0000"/>
+  </joint>
+  <link name="stereo_right_camera_optical_frame"/>
+  <joint name="stereo_right_camera_optical_joint" type="fixed">
+    <parent link="stereo_right_camera"/>
+    <child link="stereo_right_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+  <link name="mono_left_camera"/>
+  <joint name="mono_left_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="mono_left_camera"/>
+    <origin xyz="0.5326 0.1575 0.4180" rpy="0 0 0.3787"/>
+  </joint>
+  <link name="mono_left_camera_optical_frame"/>
+  <joint name="mono_left_camera_optical_joint" type="fixed">
+    <parent link="mono_left_camera"/>
+    <child link="mono_left_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+  <link name="mono_right_camera"/>
+  <joint name="mono_right_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="mono_right_camera"/>
+    <origin xyz="0.5326 -0.1575 0.4180" rpy="0 0 -0.3787"/>
+  </joint>
+  <link name="mono_right_camera_optical_frame"/>
+  <joint name="mono_right_camera_optical_joint" type="fixed">
+    <parent link="mono_right_camera"/>
+    <child link="mono_right_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+  <link name="radar_left_link"/>
+  <joint name="radar_left_link_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="radar_left_link"/>
+    <origin xyz="0.4872 0.2132 0.4180" rpy="0 0 0.9634"/>
+  </joint>
+  <link name="radar_right_link"/>
+  <joint name="radar_right_link_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="radar_right_link"/>
+    <origin xyz="0.4872 -0.2132 0.4180" rpy="0 0 -0.9634"/>
+  </joint>
+  <transmission name="front_left_steering_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="front_left_steering_joint"><hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface></joint>
+    <actuator name="servo_ds5160_left"><hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <transmission name="front_right_steering_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="front_right_steering_joint"><hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface></joint>
+    <actuator name="servo_ds5160_right"><hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <transmission name="front_left_wheel_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="front_left_wheel_joint"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface></joint>
+    <actuator name="hub_motor_front_left"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <transmission name="front_right_wheel_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="front_right_wheel_joint"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface></joint>
+    <actuator name="hub_motor_front_right"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <transmission name="rear_left_wheel_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rear_left_wheel_joint"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface></joint>
+    <actuator name="hub_motor_rear_left"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <transmission name="rear_right_wheel_joint_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rear_right_wheel_joint"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface></joint>
+    <actuator name="hub_motor_rear_right"><hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface><mechanicalReduction>1</mechanicalReduction></actuator>
+  </transmission>
+  <!-- Sensor descriptions (Gazebo syntax; Unity ignores these - see README). PLACEHOLDER values must be replaced with datasheet values. -->
+  <gazebo reference="lidar_link">
+    <sensor type="ray" name="lidar"><update_rate>10</update_rate>
+      <ray><scan><horizontal><samples>360</samples><min_angle>-3.14159</min_angle><max_angle>3.14159</max_angle></horizontal></scan>
+        <range><min>0.15</min><max>12.0</max><resolution>0.01</resolution></range></ray>
+    </sensor>
+  </gazebo>
+  <gazebo reference="stereo_left_camera">
+    <sensor type="camera" name="stereo_left"><update_rate>30</update_rate>
+      <camera><horizontal_fov>2.06</horizontal_fov><image><width>1920</width><height>1080</height></image><clip><near>0.05</near><far>50</far></clip></camera>
+    </sensor>
+  </gazebo>
+  <gazebo reference="stereo_right_camera">
+    <sensor type="camera" name="stereo_right"><update_rate>30</update_rate>
+      <camera><horizontal_fov>2.06</horizontal_fov><image><width>1920</width><height>1080</height></image><clip><near>0.05</near><far>50</far></clip></camera>
+    </sensor>
+  </gazebo>
+  <gazebo reference="mono_left_camera">
+    <sensor type="camera" name="mono_left"><update_rate>30</update_rate>
+      <camera><horizontal_fov>1.2</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.05</near><far>50</far></clip></camera>
+    </sensor><!-- PLACEHOLDER specs -->
+  </gazebo>
+  <gazebo reference="mono_right_camera">
+    <sensor type="camera" name="mono_right"><update_rate>30</update_rate>
+      <camera><horizontal_fov>1.2</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.05</near><far>50</far></clip></camera>
+    </sensor><!-- PLACEHOLDER specs -->
+  </gazebo>
+  <gazebo reference="radar_left_link">
+    <sensor type="ray" name="radar_left"><update_rate>20</update_rate>
+      <ray><scan><horizontal><samples>32</samples><min_angle>-0.35</min_angle><max_angle>0.35</max_angle></horizontal></scan>
+        <range><min>0.2</min><max>6.0</max><resolution>0.05</resolution></range></ray>
+    </sensor><!-- PLACEHOLDER specs -->
+  </gazebo>
+  <gazebo reference="radar_right_link">
+    <sensor type="ray" name="radar_right"><update_rate>20</update_rate>
+      <ray><scan><horizontal><samples>32</samples><min_angle>-0.35</min_angle><max_angle>0.35</max_angle></horizontal></scan>
+        <range><min>0.2</min><max>6.0</max><resolution>0.05</resolution></range></ray>
+    </sensor><!-- PLACEHOLDER specs -->
+  </gazebo>
+</robot>
