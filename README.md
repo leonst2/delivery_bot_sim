@@ -142,7 +142,7 @@ git add ros2_ws/src/delivery_bot_core && git commit -m "Bump delivery_bot_core"
 Change navigation code in [delivery_bot_core](https://github.com/leonst2/delivery_bot_core), not here. Then bump the
 pin. CI (`.github/workflows/core-build.yml`) runs both checks on every push.
 
-Then open the city scene in Unity and press **Play**. Set a goal by clicking on the minimap or from ROS:
+Then open `Assets/DeliveryBot/Scenes/CitySim.unity` in Unity and press **Play**. Set a goal by clicking on the minimap or from ROS:
 
 ```bash
 ros2 topic pub --once /goal_pose geometry_msgs/msg/PoseStamped \
@@ -158,7 +158,8 @@ Assets/
   DeliveryBot/
     Scripts/      DeliveryBotDrive (Ackermann drive), DeliveryBotKeyboardDrive, SensorPoseRandomizer, LinkCollisionReporter
     Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup: URDF import + robot configuration)
-    Scenes/       DeliveryBotTraining.unity: walled test ground with one robot (replaced by the city scene, #2)
+    Scenes/       CitySim.unity: main scene, only build scene (camera + light until the city, #14)
+                  DriveTest.unity: walled test ground with one robot, for drive and sensor tests
     Prefabs/      DeliveryBot.prefab
     Materials/    ground and wall materials, floor physics material
   URDF/
