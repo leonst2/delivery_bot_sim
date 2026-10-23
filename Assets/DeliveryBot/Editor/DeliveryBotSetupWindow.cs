@@ -13,13 +13,13 @@ namespace DeliveryBot.Editor
     /// <summary>
     /// Tools > Delivery Bot > Setup
     ///  1. Project settings (tags, Robot layer, physics timestep).
-    ///  2. Scene with a walled test ground.
+    ///  2. Drive test scene with a walled test ground (the main scene is CitySim.unity, which this window doesn't touch).
     ///  3. URDF import (Y-axis) + robot configuration (drive, keyboard control, sensor mounts), saved as a prefab.
     /// </summary>
     public class DeliveryBotSetupWindow : EditorWindow
     {
         public const string Root = "Assets/DeliveryBot";
-        public const string ScenePath = Root + "/Scenes/DeliveryBotTraining.unity";
+        public const string TestScenePath = Root + "/Scenes/DriveTest.unity";
         public const string RobotPrefabPath = Root + "/Prefabs/DeliveryBot.prefab";
         public const string DefaultUrdfPath = "Assets/URDF/delivery_bot/urdf/delivery_bot.urdf";
         public const string RobotLayer = "Robot";
@@ -53,8 +53,8 @@ namespace DeliveryBot.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("2. Scene", EditorStyles.boldLabel);
-            if (GUILayout.Button("Create / open scene"))
-                OpenOrCreateScene();
+            if (GUILayout.Button("Create / open drive test scene"))
+                OpenOrCreateTestScene();
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("3. Robot", EditorStyles.boldLabel);
@@ -131,14 +131,14 @@ namespace DeliveryBot.Editor
 
         // ---------------------------------------------------------------- scene
 
-        public static void OpenOrCreateScene()
+        public static void OpenOrCreateTestScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
-            if (File.Exists(ScenePath))
+            if (File.Exists(TestScenePath))
             {
-                EditorSceneManager.OpenScene(ScenePath);
+                EditorSceneManager.OpenScene(TestScenePath);
                 return;
             }
 
@@ -155,9 +155,9 @@ namespace DeliveryBot.Editor
             }
 
             CreateTestGround(Vector3.zero);
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            AddSceneToBuildSettings(ScenePath);
-            Debug.Log($"[DeliveryBot] Scene created at {ScenePath}.");
+            // Not added to Build Settings: CitySim.unity is the only build scene.
+            EditorSceneManager.SaveScene(scene, TestScenePath);
+            Debug.Log($"[DeliveryBot] Drive test scene created at {TestScenePath}.");
         }
 
         /// <summary>Flat floor with walls for drive tests. Replaced by the city scene later.</summary>
@@ -227,14 +227,6 @@ namespace DeliveryBot.Editor
             return mat;
         }
 
-        static void AddSceneToBuildSettings(string path)
-        {
-            var scenes = EditorBuildSettings.scenes.ToList();
-            if (scenes.Any(s => s.path == path)) return;
-            scenes.Insert(0, new EditorBuildSettingsScene(path, true));
-            EditorBuildSettings.scenes = scenes.ToArray();
-        }
-
         // ---------------------------------------------------------------- URDF import
 
         void ImportAndConfigure()
@@ -245,8 +237,8 @@ namespace DeliveryBot.Editor
                     $"URDF not found at\n{m_UrdfPath}\n\nCopy the whole delivery_bot folder to Assets/URDF/ (or pick the file with …).", "OK");
                 return;
             }
-            if (SceneManager.GetActiveScene().path != ScenePath)
-                OpenOrCreateScene();
+            if (SceneManager.GetActiveScene().path != TestScenePath)
+                OpenOrCreateTestScene();
 
             var robot = ImportUrdf(m_UrdfPath);
             if (robot != null)

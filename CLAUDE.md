@@ -58,8 +58,11 @@ ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
 - **Command sources must not fight:** `DeliveryBotKeyboardDrive` only calls `SetCommand` while a key is held (plus
   one stop on release). Any new command source (for example the `/cmd_vel` subscriber) should behave the same way, or
   own the drive exclusively.
-- ML-Agents is gone (#3). Don't reintroduce `Unity.MLAgents` types. The scene's `TestGround` is a plain floor with
-  walls for drive tests until the city scene (#2) replaces it.
+- ML-Agents is gone (#3). Don't reintroduce `Unity.MLAgents` types.
+- **Scenes:** `Scenes/CitySim.unity` is the main scene and the only one in Build Settings. It's empty (camera + light)
+  until the city (#14) lands; city, UI and dynamic objects go there. `Scenes/DriveTest.unity` is a walled
+  `TestGround` with one robot for quick drive/sensor tests. The setup window creates/opens it and imports the URDF
+  into it. The robot reaches CitySim only as a `DeliveryBot.prefab` instance.
 
 ## Gotchas
 
