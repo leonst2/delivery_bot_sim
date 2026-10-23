@@ -52,14 +52,14 @@ ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
 - **Topic names and types** are fixed by the README table. The issues were written against it so they can be
   worked on in parallel. Change the table and the affected issues together.
 - **`Editor/DeliveryBotSetupWindow.cs` (Tools > Delivery Bot > Setup)** imports the URDF and configures the robot
-  in `ConfigureRobot`: layer, frame-link masses, components, sensor mounts. It then re-saves the prefab(s), so
-  hand edits to those components are overwritten by the next Configure. Change the setup code instead.
-
-## Legacy RL code (being removed in #3)
-
-`DeliveryBotAgent`, `TrainingArena`, `config/delivery_bot_ppo.yaml`, `requirements-training.txt`, `.venv` and the
-`com.unity.ml-agents` package are left over from the RL setup. Don't build on them or extend them.
-`DeliveryBotDrive`, `SensorPoseRandomizer` and `LinkCollisionReporter` stay.
+  in `ConfigureRobot`: layer, frame-link masses, `DeliveryBotDrive` + `DeliveryBotKeyboardDrive`, and sensor
+  mounts. It then re-saves `DeliveryBot.prefab`, so hand edits to those components are overwritten by the next
+  Configure. Change the setup code instead.
+- **Command sources must not fight:** `DeliveryBotKeyboardDrive` only calls `SetCommand` while a key is held (plus
+  one stop on release). Any new command source (for example the `/cmd_vel` subscriber) should behave the same way, or
+  own the drive exclusively.
+- ML-Agents is gone (#3). Don't reintroduce `Unity.MLAgents` types. The scene's `TestGround` is a plain floor with
+  walls for drive tests until the city scene (#2) replaces it.
 
 ## Gotchas
 

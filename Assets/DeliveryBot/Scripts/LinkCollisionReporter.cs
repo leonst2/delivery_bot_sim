@@ -1,16 +1,16 @@
+using System;
 using UnityEngine;
 
 namespace DeliveryBot
 {
-    /// <summary>Forwards collisions of one robot link to the agent.</summary>
+    /// <summary>Forwards collisions of one robot link (added to each ArticulationBody by <see cref="DeliveryBotDrive"/>).</summary>
     public class LinkCollisionReporter : MonoBehaviour
     {
-        public DeliveryBotAgent agent;
+        public event Action<Collision> CollisionEntered;
 
         void OnCollisionEnter(Collision collision)
         {
-            if (agent != null)
-                agent.OnLinkCollision(collision);
+            CollisionEntered?.Invoke(collision);
         }
     }
 }

@@ -1,10 +1,6 @@
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Unity.MLAgents;
-using Unity.MLAgents.Actuators;
-using Unity.MLAgents.Policies;
-using Unity.MLAgents.Sensors;
 using Unity.Robotics.UrdfImporter;
 using Unity.Robotics.UrdfImporter.Control;
 using UnityEditor;
@@ -17,25 +13,34 @@ namespace DeliveryBot.Editor
     /// <summary>
     /// Tools > Delivery Bot > Setup
     ///  1. Project settings (tags, Robot layer, physics timestep).
-    ///  2. Training scene with one arena.
-    ///  3. URDF import (Y-axis) + robot configuration (drives, agent, lidar/radar, optional cameras), saved as prefabs.
+    ///  2. Scene with a walled test ground.
+    ///  3. URDF import (Y-axis) + robot configuration (drive, keyboard control, sensor mounts), saved as a prefab.
     /// </summary>
     public class DeliveryBotSetupWindow : EditorWindow
     {
         public const string Root = "Assets/DeliveryBot";
         public const string ScenePath = Root + "/Scenes/DeliveryBotTraining.unity";
         public const string RobotPrefabPath = Root + "/Prefabs/DeliveryBot.prefab";
-        public const string ArenaPrefabPath = Root + "/Prefabs/TrainingArena.prefab";
         public const string DefaultUrdfPath = "Assets/URDF/delivery_bot/urdf/delivery_bot.urdf";
         public const string RobotLayer = "Robot";
-        public const string BehaviorName = "DeliveryBot";
+        public const string ObstacleTag = "Obstacle";
+        public const string WallTag = "Wall";
+        public const string TestGroundName = "TestGround";
+        const float TestGroundSize = 20f;
+
+        // Sensor frames from the URDF that get a mount object (sensors can't sit on the ArticulationBody links).
+        static readonly (string link, string mount)[] SensorMounts =
+        {
+            ("lidar_link", "LidarSensor"),
+            ("radar_left_link", "RadarSensor"),
+            ("radar_right_link", "RadarSensor"),
+            ("stereo_left_camera", "CameraSensor"),
+            ("stereo_right_camera", "CameraSensor"),
+            ("mono_left_camera", "CameraSensor"),
+            ("mono_right_camera", "CameraSensor"),
+        };
 
         [SerializeField] string m_UrdfPath = DefaultUrdfPath;
-        [SerializeField] bool m_AddRadar = true;
-        [SerializeField] bool m_AddCameras;
-        [SerializeField] int m_CameraWidth = 84;
-        [SerializeField] int m_CameraHeight = 84;
-        [SerializeField] int m_ArenaCount = 8;
 
         [MenuItem("Tools/Delivery Bot/Setup", priority = 0)]
         static void Open() => GetWindow<DeliveryBotSetupWindow>("Delivery Bot Setup");
@@ -48,8 +53,8 @@ namespace DeliveryBot.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("2. Scene", EditorStyles.boldLabel);
-            if (GUILayout.Button("Create / open training scene"))
-                OpenOrCreateTrainingScene();
+            if (GUILayout.Button("Create / open scene"))
+                OpenOrCreateScene();
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("3. Robot", EditorStyles.boldLabel);
@@ -63,13 +68,6 @@ namespace DeliveryBot.Editor
                         m_UrdfPath = ToAssetPath(picked);
                 }
             }
-            m_AddRadar = EditorGUILayout.Toggle("Radar ray sensors", m_AddRadar);
-            m_AddCameras = EditorGUILayout.Toggle("Camera sensors (slow)", m_AddCameras);
-            using (new EditorGUI.DisabledScope(!m_AddCameras))
-            {
-                m_CameraWidth = EditorGUILayout.IntField("  Width", m_CameraWidth);
-                m_CameraHeight = EditorGUILayout.IntField("  Height", m_CameraHeight);
-            }
             if (GUILayout.Button("Import URDF and configure robot"))
                 ImportAndConfigure();
             if (GUILayout.Button("Configure selected robot (already imported)"))
@@ -80,20 +78,14 @@ namespace DeliveryBot.Editor
                 else
                     ConfigureRobot(selected.GetComponentInParent<UrdfRobot>().gameObject);
             }
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("4. Parallel training", EditorStyles.boldLabel);
-            m_ArenaCount = EditorGUILayout.IntSlider("Arenas", m_ArenaCount, 1, 32);
-            if (GUILayout.Button("Lay out arena copies"))
-                LayOutArenas(m_ArenaCount);
         }
 
         // ---------------------------------------------------------------- project settings
 
         public static void ApplyProjectSettings()
         {
-            EnsureTag(TrainingArena.ObstacleTag);
-            EnsureTag(TrainingArena.WallTag);
+            EnsureTag(ObstacleTag);
+            EnsureTag(WallTag);
             int layer = EnsureLayer(RobotLayer);
             if (layer >= 0)
                 Physics.IgnoreLayerCollision(layer, layer, true);
@@ -139,7 +131,7 @@ namespace DeliveryBot.Editor
 
         // ---------------------------------------------------------------- scene
 
-        public static void OpenOrCreateTrainingScene()
+        public static void OpenOrCreateScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
@@ -162,26 +154,25 @@ namespace DeliveryBot.Editor
                 cam.transform.rotation = Quaternion.Euler(50f, 0f, 0f);
             }
 
-            CreateArena(Vector3.zero);
+            CreateTestGround(Vector3.zero);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
-            Debug.Log($"[DeliveryBot] Training scene created at {ScenePath}.");
+            Debug.Log($"[DeliveryBot] Scene created at {ScenePath}.");
         }
 
-        static TrainingArena CreateArena(Vector3 position)
+        /// <summary>Flat floor with walls for drive tests. Replaced by the city scene later.</summary>
+        static GameObject CreateTestGround(Vector3 position)
         {
-            var arenaGo = new GameObject("TrainingArena");
-            arenaGo.transform.position = position;
-            var arena = arenaGo.AddComponent<TrainingArena>();
+            var groundGo = new GameObject(TestGroundName);
+            groundGo.transform.position = position;
 
             var groundMat = GetMaterial("Ground", new Color(0.55f, 0.55f, 0.52f));
             var wallMat = GetMaterial("Wall", new Color(0.35f, 0.4f, 0.5f));
-            var goalMat = GetMaterial("Goal", new Color(0.2f, 0.85f, 0.3f));
 
-            float size = arena.size;
+            const float size = TestGroundSize;
             var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.name = "Floor";
-            floor.transform.SetParent(arenaGo.transform, false);
+            floor.transform.SetParent(groundGo.transform, false);
             floor.transform.localPosition = new Vector3(0f, -0.05f, 0f);
             floor.transform.localScale = new Vector3(size + 1f, 0.1f, size + 1f);
             floor.GetComponent<Renderer>().sharedMaterial = groundMat;
@@ -192,8 +183,8 @@ namespace DeliveryBot.Editor
             {
                 var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 wall.name = $"Wall_{i}";
-                wall.tag = TrainingArena.WallTag;
-                wall.transform.SetParent(arenaGo.transform, false);
+                wall.tag = WallTag;
+                wall.transform.SetParent(groundGo.transform, false);
                 bool alongX = i < 2;
                 float offset = (size + wallThickness) * 0.5f * (i % 2 == 0 ? 1f : -1f);
                 wall.transform.localPosition = alongX ? new Vector3(0f, wallHeight * 0.5f, offset) : new Vector3(offset, wallHeight * 0.5f, 0f);
@@ -203,17 +194,8 @@ namespace DeliveryBot.Editor
                 wall.GetComponent<Renderer>().sharedMaterial = wallMat;
             }
 
-            var goal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            goal.name = "Goal";
-            Object.DestroyImmediate(goal.GetComponent<Collider>());
-            goal.transform.SetParent(arenaGo.transform, false);
-            goal.transform.localPosition = new Vector3(0f, 0.01f, 5f);
-            goal.transform.localScale = new Vector3(1.2f, 0.01f, 1.2f);
-            goal.GetComponent<Renderer>().sharedMaterial = goalMat;
-            arena.goal = goal.transform;
-
-            Undo.RegisterCreatedObjectUndo(arenaGo, "Create Training Arena");
-            return arena;
+            Undo.RegisterCreatedObjectUndo(groundGo, "Create Test Ground");
+            return groundGo;
         }
 
         static Material GetMaterial(string name, Color color)
@@ -264,7 +246,7 @@ namespace DeliveryBot.Editor
                 return;
             }
             if (SceneManager.GetActiveScene().path != ScenePath)
-                OpenOrCreateTrainingScene();
+                OpenOrCreateScene();
 
             var robot = ImportUrdf(m_UrdfPath);
             if (robot != null)
@@ -353,98 +335,37 @@ namespace DeliveryBot.Editor
                 body.inertiaTensor = Vector3.one * 1e-5f;
             }
 
-            var drive = GetOrAdd<DeliveryBotDrive>(robot);
-            var agent = GetOrAdd<DeliveryBotAgent>(robot);
-            agent.MaxStep = 3000; // 30 s at 100 Hz
+            GetOrAdd<DeliveryBotDrive>(robot);
+            GetOrAdd<DeliveryBotKeyboardDrive>(robot);
 
-            var behavior = GetOrAdd<BehaviorParameters>(robot);
-            behavior.BehaviorName = BehaviorName;
-            behavior.BrainParameters.VectorObservationSize = DeliveryBotAgent.VectorObservationSize;
-            behavior.BrainParameters.ActionSpec = ActionSpec.MakeContinuous(DeliveryBotAgent.ContinuousActionSize);
-            behavior.UseChildSensors = true;
-
-            var requester = GetOrAdd<DecisionRequester>(robot);
-            requester.DecisionPeriod = 5; // 20 Hz decisions
-            requester.TakeActionsBetweenDecisions = true;
-
-            int rayMask = ~((1 << layer) | (1 << LayerMask.NameToLayer("Ignore Raycast")));
-            var tags = new System.Collections.Generic.List<string> { TrainingArena.ObstacleTag, TrainingArena.WallTag };
-
-            var lidarLink = FindLink(robot, "lidar_link");
-            if (lidarLink != null)
+            foreach (var (linkName, mountName) in SensorMounts)
             {
-                var lidar = GetOrAdd<RayPerceptionSensorComponent3D>(Mount(lidarLink, "LidarSensor"));
-                lidar.SensorName = "Lidar";
-                lidar.DetectableTags = tags;
-                lidar.RaysPerDirection = 18; // 37 rays, ~10 deg apart
-                lidar.MaxRayDegrees = 180f;
-                lidar.RayLength = 12f;
-                lidar.SphereCastRadius = 0.05f;
-                lidar.RayLayerMask = rayMask;
-                lidar.ObservationStacks = 1;
+                var link = FindLink(robot, linkName);
+                if (link != null)
+                    Mount(link, mountName);
             }
 
-            if (m_AddRadar)
+            // Put the robot onto the test ground of the open scene.
+            var ground = GameObject.Find(TestGroundName);
+            if (ground != null && robot.transform.parent == null)
             {
-                foreach (var side in new[] { "left", "right" })
-                {
-                    var link = FindLink(robot, $"radar_{side}_link");
-                    if (link == null) continue;
-                    var radar = GetOrAdd<RayPerceptionSensorComponent3D>(Mount(link, "RadarSensor"));
-                    radar.SensorName = $"Radar_{side}";
-                    radar.DetectableTags = tags;
-                    radar.RaysPerDirection = 2;
-                    radar.MaxRayDegrees = 30f;
-                    radar.RayLength = 4f;
-                    radar.SphereCastRadius = 0.15f;
-                    radar.RayLayerMask = rayMask;
-                }
-            }
-
-            if (m_AddCameras)
-            {
-                foreach (var cameraLink in new[] { "stereo_left_camera", "stereo_right_camera", "mono_left_camera", "mono_right_camera" })
-                {
-                    var link = FindLink(robot, cameraLink);
-                    if (link == null) continue;
-                    var mount = Mount(link, "CameraSensor");
-                    var cam = GetOrAdd<Camera>(mount);
-                    cam.fieldOfView = 50f; // PLACEHOLDER: set the real vertical FOV of the camera
-                    cam.nearClipPlane = 0.05f;
-                    cam.farClipPlane = 30f;
-                    cam.enabled = false; // rendered on demand by the sensor
-                    var sensor = GetOrAdd<CameraSensorComponent>(mount);
-                    sensor.Camera = cam;
-                    sensor.SensorName = cameraLink;
-                    sensor.Width = m_CameraWidth;
-                    sensor.Height = m_CameraHeight;
-                    sensor.Grayscale = false;
-                }
-            }
-
-            // Put the robot into the arena of the open scene.
-            var arena = Object.FindFirstObjectByType<TrainingArena>();
-            if (arena != null)
-            {
-                robot.transform.SetParent(arena.transform, false);
+                robot.transform.SetParent(ground.transform, false);
                 robot.transform.localPosition = new Vector3(0f, 0.02f, 0f);
                 robot.transform.localRotation = Quaternion.identity;
-                agent.arena = arena;
             }
 
             EnsureFolder(Root + "/Prefabs");
-            // Re-running: unpack so the robot can be saved on its own, then nest it in the arena prefab again.
+            // Re-running: if the robot is nested inside another prefab instance, unpack that first, because Unity
+            // can't save a nested part of a prefab instance as its own prefab.
             var outermost = PrefabUtility.GetOutermostPrefabInstanceRoot(robot);
-            if (outermost != null)
+            if (outermost != null && outermost != robot)
                 PrefabUtility.UnpackPrefabInstance(outermost, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             PrefabUtility.SaveAsPrefabAssetAndConnect(robot, RobotPrefabPath, InteractionMode.AutomatedAction);
-            if (arena != null)
-                PrefabUtility.SaveAsPrefabAssetAndConnect(arena.gameObject, ArenaPrefabPath, InteractionMode.AutomatedAction);
 
             EditorSceneManager.MarkSceneDirty(robot.scene);
             EditorSceneManager.SaveScene(robot.scene);
             Selection.activeGameObject = robot;
-            Debug.Log($"[DeliveryBot] Robot configured: wheelbase/track/radius are measured at Play. Prefabs: {RobotPrefabPath}, {ArenaPrefabPath}");
+            Debug.Log($"[DeliveryBot] Robot configured: wheelbase/track/radius are measured at Play. Prefab: {RobotPrefabPath}");
         }
 
         static GameObject Mount(Transform link, string name)
@@ -468,34 +389,6 @@ namespace DeliveryBot.Editor
         static T GetOrAdd<T>(GameObject go) where T : Component
         {
             return go.TryGetComponent(out T component) ? component : go.AddComponent<T>();
-        }
-
-        // ---------------------------------------------------------------- parallel arenas
-
-        public static void LayOutArenas(int count)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ArenaPrefabPath);
-            if (prefab == null)
-            {
-                EditorUtility.DisplayDialog("Delivery Bot", "Configure the robot first; that saves the arena prefab.", "OK");
-                return;
-            }
-
-            var arenas = Object.FindObjectsByType<TrainingArena>(FindObjectsSortMode.InstanceID);
-            for (int i = 1; i < arenas.Length; i++)
-                Undo.DestroyObjectImmediate(arenas[i].gameObject);
-
-            float spacing = prefab.GetComponent<TrainingArena>().size + 6f;
-            int columns = Mathf.CeilToInt(Mathf.Sqrt(count));
-            for (int i = 0; i < count; i++)
-            {
-                var pos = new Vector3((i % columns) * spacing, 0f, (i / columns) * spacing);
-                GameObject arena = i == 0 && arenas.Length > 0 ? arenas[0].gameObject : (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-                arena.transform.position = pos;
-                arena.name = $"TrainingArena_{i}";
-                if (i > 0) Undo.RegisterCreatedObjectUndo(arena, "Lay out arenas");
-            }
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
         // ---------------------------------------------------------------- utilities

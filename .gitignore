@@ -113,12 +113,9 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# ML-Agents
+# Local Python leftovers from the former RL setup (.venv, training results) and caches
 /results/
 /.venv/
-# ML-Agents editor timing dumps (rewritten on every Play)
-/[Aa]ssets/ML-Agents/
-/[Aa]ssets/ML-Agents.meta
 __pycache__/
 *.pyc
 

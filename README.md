@@ -156,11 +156,11 @@ Useful checks: `ros2 topic echo /clock`, `ros2 run tf2_ros tf2_echo odom base_li
 ```text
 Assets/
   DeliveryBot/
-    Scripts/      DeliveryBotDrive (Ackermann drive), SensorPoseRandomizer, LinkCollisionReporter
+    Scripts/      DeliveryBotDrive (Ackermann drive), DeliveryBotKeyboardDrive, SensorPoseRandomizer, LinkCollisionReporter
     Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup: URDF import + robot configuration)
-    Scenes/       simulation scene(s)
+    Scenes/       DeliveryBotTraining.unity: walled test ground with one robot (replaced by the city scene, #2)
     Prefabs/      DeliveryBot.prefab
-    Materials/    ground, wall and goal materials, floor physics material
+    Materials/    ground and wall materials, floor physics material
   URDF/
     delivery_bot/ URDF package (urdf/, meshes/, package.xml, README.md with the robot description)
 docker/                         ROS 2 container (Dockerfile, compose.yaml)          (planned)
@@ -189,7 +189,10 @@ Measured from the imported model at start-up:
 
 `DeliveryBotDrive` takes a forward speed and a steering angle (`SetCommand`). It sets **Ackermann** angles on the
 two steering joints and a matching speed on each of the four driven wheels. `/cmd_vel` maps onto it with
-`steering = atan(wheelbase · ω / v)`.
+`steering = atan(wheelbase · ω / v)`. Collisions of any link are reported through `DeliveryBotDrive.Collided`.
+
+**Manual driving:** press Play and use **W/S** or **↑/↓** for throttle and **A/D** or **←/→** for steering
+(`DeliveryBotKeyboardDrive`). It only sends commands while a key is held, so it doesn't fight commands from ROS.
 
 | Joint | Drive in Unity |
 | --- | --- |
@@ -228,9 +231,10 @@ copies match.
 ## Legacy (RL)
 
 Before this migration, the robot was trained with Unity ML-Agents (PPO) to drive to a goal (`DeliveryBotAgent`,
-`TrainingArena`, `config/delivery_bot_ppo.yaml`, Python trainer in `.venv`). That approach has been dropped in
-favour of ROS 2 / Nav2. The remaining ML-Agents code and package are being removed (issue #3), and the RL training
-workflow is no longer supported. See the git history before this change for the old instructions.
+`TrainingArena`, `config/delivery_bot_ppo.yaml`, Python trainer in `.venv`). That approach was dropped in favour of
+ROS 2 / Nav2, and the ML-Agents package, code and training config were removed (issue #3). See the git history
+before that change for the old setup. A local `.venv/` or `results/` folder from that time is git-ignored and can be
+deleted.
 
 ## Known limitations
 
