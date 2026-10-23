@@ -1,91 +1,154 @@
 # delivery_bot_sim
 
-Unity simulation of the **delivery_bot** (URDF V-0.2) for reinforcement learning with
-[Unity ML-Agents](https://github.com/Unity-Technologies/ml-agents). The robot is imported from its URDF as an
-ArticulationBody chain and learns to drive to a goal in an arena with randomly placed obstacles.
+Unity simulation of the **delivery_bot** (URDF V-0.2) for developing and testing its navigation stack. The robot is
+imported from its URDF as an ArticulationBody chain and is driven by a deterministic, classical robotics pipeline:
+**ROS 2 + Nav2**, connected to Unity over TCP.
 
-> **Status:** test environment. The task, rewards, sensors and hyperparameters are a first working setup, not
-> the final version.
+> **Status:** migration in progress. The project started as a Reinforcement Learning (ML-Agents) test environment
+> and is moving to ROS 2 / Nav2. This README describes the target architecture. The parts that aren't built yet
+> are tracked in the [GitHub issues](https://github.com/leonst2/delivery_bot_sim/issues) and the
+> *delivery_bot_sim* project board. Paths marked *(planned)* don't exist yet.
+
+## Why ROS 2 / Nav2 instead of RL
+
+The robot's behaviour has to be predictable, debuggable and the same in simulation and on the physical robot. A
+learned policy gives none of that. With ROS 2 / Nav2, perception, mapping, planning and control are separate,
+inspectable nodes, and the simulation runs exactly the same navigation code as the real robot. Unity's job is
+now only to simulate the world, the robot's physics and its sensors.
+
+## Architecture
+
+```text
+┌──────────────────────────── Unity 6.3 (host) ─────────────────────────────┐
+│  City scene: static objects (buildings, parked cars) + dynamic objects    │
+│  (cyclists)                                                               │
+│  delivery_bot (URDF → ArticulationBodies)                                 │
+│    sensors:   2D LiDAR → /scan, stereo cameras → /stereo/*                │
+│    state:     /odom, /tf (odom→base_link), /clock                         │
+│    actuation: /cmd_vel → DeliveryBotDrive (Ackermann)                     │
+│  UI: minimap, LiDAR view, camera views, Nav2 path overlay                 │
+│                     ROS-TCP-Connector (ROSConnection)                     │
+└─────────────────────────────────┬─────────────────────────────────────────┘
+                                  │ TCP 127.0.0.1:10000
+┌─────────────────────────────────┴───── Docker (network_mode: host) ───────┐
+│  ros_tcp_endpoint                                                         │
+│  robot_state_publisher (URDF from the shared submodule → /tf_static)      │
+│  perception / dynamic obstacle tracking → /tracked_obstacles              │
+│  map_server or slam_toolbox, Nav2 (costmaps, planner)                     │
+│  grid-step controller → /cmd_vel, /plan, /grid_step/state                 │
+│  ros2_ws/src/delivery_bot_nav  ← shared Git submodule (same as robot)     │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Unity ⇄ ROS 2:** Unity Robotics [ROS-TCP-Connector](https://github.com/Unity-Technologies/ROS-TCP-Connector)
+  in the editor talks to `ros_tcp_endpoint` over TCP on port 10000. ROS 2 is Jazzy, and all nodes run with
+  `use_sim_time:=true` on the `/clock` that Unity publishes.
+- **Docker:** all ROS 2 nodes run in one container with `network_mode: host`, so the endpoint is reachable on
+  `127.0.0.1` and DDS discovery works without port mapping. On macOS, enable host networking in Docker Desktop
+  (Settings → Resources → Network). Otherwise, publish port 10000 instead.
+- **Shared navigation code:** the navigation packages (Nav2 parameters, grid-step controller, perception,
+  `delivery_bot_description`) live in a separate repository, included as a Git submodule at
+  `ros2_ws/src/delivery_bot_nav` *(planned)* and pinned to a commit. The physical robot uses the same repository.
+  Sim-only differences (`use_sim_time`, topic remaps) are limited to a `sim` launch argument or a params overlay.
+
+### Grid-step navigation loop
+
+The robot doesn't drive continuously. It runs a discrete, deterministic loop:
+
+1. **Halt.** Command zero velocity until the robot is at rest (|v| < 0.02 m/s).
+2. **Perceive.** Wait for a fresh LiDAR scan and stereo pair taken after the halt. Detect and track dynamic
+   objects (cyclists).
+3. **Map.** Wait until the local costmap has been updated with those observations.
+4. **Plan.** (Re)compute the path to the goal with Nav2 (`ComputePathToPose`) and publish it on `/plan`.
+5. **Move one cell.** Follow the path for exactly `step_size` metres (default 0.5 m) of arc length, then go back
+   to step 1.
+
+If a tracked object is predicted to cross the next step, the robot **yields** (stays halted and perceives again).
+If an object blocks the path and stays put, the robot **re-plans** around it. With the same map, start and goal,
+the robot always takes the same sequence of steps.
+
+The minimum turning radius is about 1.25 m, so a 0.5 m step is an arc segment along the planned path, not a
+turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
+
+### ROS interface
+
+| Topic | Type | Direction | Frame |
+| --- | --- | --- | --- |
+| `/clock` | `rosgraph_msgs/Clock` | Unity → ROS | |
+| `/tf` | `tf2_msgs/TFMessage` (`odom → base_link`) | Unity → ROS | `odom` |
+| `/tf_static` | `tf2_msgs/TFMessage` (sensor frames) | `robot_state_publisher` | |
+| `/odom` | `nav_msgs/Odometry` | Unity → ROS | `odom` → `base_link` |
+| `/scan` | `sensor_msgs/LaserScan` | Unity → ROS | `lidar_link` |
+| `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` | Unity → ROS | `stereo_{left,right}_camera` |
+| `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera` |
+| `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
+| `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
+| `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
+| `/grid_step/state` | `std_msgs/String` | ROS → Unity | |
+| `/tracked_obstacles` | `visualization_msgs/MarkerArray` | ROS → Unity | `map` |
+
+`/cmd_vel` is `geometry_msgs/Twist`, Nav2's default on Jazzy. Switch both sides to `TwistStamped` if
+`enable_stamped_cmd_vel` is turned on. Unity uses RUF coordinates (right, up, forward) and ROS uses FLU (forward,
+left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>()`).
+
+## UI layout
+
+| Region | Content |
+| --- | --- |
+| Top left | Live 2D LiDAR scan, robot-centred polar plot |
+| Bottom left | Minimap of the whole city: robot, goal and dynamic objects. Click to set a goal (`/goal_pose`) |
+| Right half | Live stereo/front camera views |
+| 3D view | Rendered line of the current Nav2 path (`/plan`) |
+
+A status bar shows the ROS connection status and the current grid-step state.
 
 ## Requirements
 
 | | Version |
 | --- | --- |
 | Unity | 6000.3.26f1 (Unity 6.3), URP |
-| ML-Agents (Unity package) | `com.unity.ml-agents` 4.0.3 |
 | URDF Importer | `com.unity.robotics.urdf-importer` v0.5.2 (git) |
-| Python | 3.10.12 in `.venv` (created with `uv`) |
-| ML-Agents trainer | `mlagents` 1.1.0, `torch` 2.2.2 |
+| ROS-TCP-Connector | `com.unity.robotics.ros-tcp-connector` (git, pinned tag) *(planned)* |
+| ROS 2 | Jazzy, in Docker (`ros:jazzy` + Nav2, slam_toolbox, ros_tcp_endpoint) *(planned)* |
+| Docker | Docker Desktop with host networking enabled (macOS) |
 
-### Python setup
+## Quick start
+
+> The Docker setup, the submodule and the ROS-TCP-Connector aren't in the repository yet. These are the
+> intended steps.
 
 ```bash
-uv venv --python 3.10.12 .venv          # only if .venv does not exist yet
-echo "grpcio==1.62.3" > /tmp/overrides.txt
-uv pip install --python .venv/bin/python --override /tmp/overrides.txt -r requirements-training.txt
-.venv/bin/mlagents-learn --help          # check
+git clone --recurse-submodules https://github.com/leonst2/delivery_bot_sim.git
+# or, in an existing clone:
+git submodule update --init --recursive
+
+docker compose -f docker/compose.yaml up        # ros_tcp_endpoint on 0.0.0.0:10000, Nav2, grid-step controller
 ```
 
-The `grpcio` override is needed on Apple Silicon: `mlagents` pins `grpcio` 1.48.2, which has no arm64 wheel.
-`torch` is pinned to 2.2.2 because newer versions need `onnxscript` for the model export used by `mlagents` 1.1.
+Then open the city scene in Unity and press **Play**. Set a goal by clicking on the minimap or from ROS:
+
+```bash
+ros2 topic pub --once /goal_pose geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: map}, pose: {position: {x: 10.0, y: 5.0}, orientation: {w: 1.0}}}"
+```
+
+Useful checks: `ros2 topic echo /clock`, `ros2 run tf2_ros tf2_echo odom base_link`, RViz2 with fixed frame `map`.
 
 ## Project layout
 
 ```text
 Assets/
   DeliveryBot/
-    Scripts/      DeliveryBotDrive, DeliveryBotAgent, TrainingArena, SensorPoseRandomizer, LinkCollisionReporter
-    Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup)
-    Scenes/       DeliveryBotTraining.unity  <- training scene
-    Prefabs/      DeliveryBot.prefab, TrainingArena.prefab
-    Materials/    arena materials, floor physics material
+    Scripts/      DeliveryBotDrive (Ackermann drive), SensorPoseRandomizer, LinkCollisionReporter
+    Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup: URDF import + robot configuration)
+    Scenes/       simulation scene(s)
+    Prefabs/      DeliveryBot.prefab
+    Materials/    ground, wall and goal materials, floor physics material
   URDF/
     delivery_bot/ URDF package (urdf/, meshes/, package.xml, README.md with the robot description)
-config/delivery_bot_ppo.yaml   PPO trainer config + curriculum
-requirements-training.txt      Python dependencies
-results/                       training output (git-ignored)
+docker/                         ROS 2 container (Dockerfile, compose.yaml)          (planned)
+ros2_ws/src/delivery_bot_nav/   shared navigation submodule                         (planned)
 ```
-
-## Running the simulation
-
-### Drive the robot by hand
-
-1. Open `Assets/DeliveryBot/Scenes/DeliveryBotTraining.unity`.
-2. Press **Play**. Without a trainer or a model, the agent uses keyboard control:
-   **W/S** or **↑/↓** throttle, **A/D** or **←/→** steering.
-3. An episode ends when the robot reaches the green goal, hits a wall or obstacle, tips over, or after 30 s.
-   The arena then re-randomises.
-
-### Train
-
-```bash
-.venv/bin/mlagents-learn config/delivery_bot_ppo.yaml --run-id=delivery_bot_01
-```
-
-When the trainer prints *"Listening on port 5004"*, press **Play** in Unity. Keep the Unity editor in the
-foreground while training in the editor; it stops updating when it loses focus.
-
-- Watch progress: `.venv/bin/tensorboard --logdir results` → <http://localhost:6006>
-- Resume a run: add `--resume`. Start over with the same id: add `--force`.
-- Faster training: in **Tools > Delivery Bot > Setup**, click **Lay out arena copies** (for example 8 arenas, each with
-  its own robot). For long runs, build a standalone player (File > Build Profiles) and train headless:
-  `mlagents-learn config/delivery_bot_ppo.yaml --run-id=... --env=Builds/delivery_bot_sim --no-graphics --num-envs=4`
-
-### Use a trained model
-
-The trained policy is written to `results/<run-id>/DeliveryBot.onnx`. Copy it into `Assets/`, select the
-`delivery_bot` object, and in **Behavior Parameters** set **Model** to the `.onnx` and **Behavior Type** to
-*Inference Only*.
-
-### Re-import the robot after a URDF change
-
-1. Replace the files in `Assets/URDF/delivery_bot/`.
-2. Delete the old `delivery_bot` object from the scene.
-3. **Tools > Delivery Bot > Setup → Import URDF and configure robot.**
-
-The tool imports with Y-axis settings, removes the URDF Importer's keyboard joint controller, adds the agent and
-sensors, places the robot in the arena and re-saves both prefabs. **Configure selected robot** re-applies only the
-configuration to a robot that is already imported.
 
 ## The robot in the simulation
 
@@ -101,13 +164,14 @@ Measured from the imported model at start-up:
 | Wheelbase | 0.49 m |
 | Track width (front and rear) | 0.485 m |
 | Wheel radius | 0.085 m |
-| Top speed (35 rad/s hub motors) | 2.98 m/s; the agent is limited to 2.0 m/s forward and 0.6 m/s in reverse |
+| Top speed (35 rad/s hub motors) | 2.98 m/s; commands are limited to 2.0 m/s forward and 0.6 m/s in reverse |
 | Max steering angle (bicycle model) | 21.4°; inner wheel 26°, outer wheel 20° |
 | Min turning radius (rear-axle centre) | ≈ 1.25 m |
 | Total mass | ≈ 29 kg |
 
-`DeliveryBotDrive` takes a forward speed and a steering angle. It sets **Ackermann** angles on the two steering
-joints and a matching speed on each of the four driven wheels, so the inner and outer wheels turn at different rates.
+`DeliveryBotDrive` takes a forward speed and a steering angle (`SetCommand`). It sets **Ackermann** angles on the
+two steering joints and a matching speed on each of the four driven wheels. `/cmd_vel` maps onto it with
+`steering = atan(wheelbase · ω / v)`.
 
 | Joint | Drive in Unity |
 | --- | --- |
@@ -116,36 +180,39 @@ joints and a matching speed on each of the four driven wheels, so the inner and 
 | Suspension (passive) | spring: 333 Nm/rad front, 210 Nm/rad rear, damping 10 |
 
 Physics runs at 100 Hz (fixed timestep 0.01 s, 12/4 solver iterations). Unity frames: robot forward = +Z,
-left = −X, up = +Y. Joint signs follow the URDF: positive steering = left turn, positive wheel speed = forward.
+left = −X, up = +Y. `base_link` origin = ground point under the rear-axle centre. Joint signs follow the URDF:
+positive steering = left turn, positive wheel speed = forward.
 
 ### Sensors
 
 | Sensor | Frame | Simulated as |
 | --- | --- | --- |
-| Lidar | `lidar_link` | `RayPerceptionSensorComponent3D`: 37 rays over 360°, 12 m range |
-| Radar left/right | `radar_*_link` | 5 rays over ±30°, 4 m range |
-| Stereo/mono cameras | `*_camera` | off by default; enable *Camera sensors* in the setup window (vertical FOV is a 50° placeholder) |
+| 2D LiDAR | `lidar_link` | raycast fan, 360°, 1° resolution, 0.1–12 m, 10 Hz → `/scan` *(planned)* |
+| Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) *(planned)* |
+| Radar left/right, mono cameras | `radar_*_link`, `mono_*_camera` | frames available in the URDF, not simulated yet |
 
-Rays detect objects tagged `Obstacle` and `Wall` and ignore the robot itself (`Robot` layer).
+Sensor rays ignore the robot itself (`Robot` layer). Sensors sit on child "mount" objects under the links, because
+the links are ArticulationBodies.
 
-### Learning task
+### Re-import the robot after a URDF change
 
-| | |
-| --- | --- |
-| Behavior name | `DeliveryBot` |
-| Actions | 2 continuous: throttle −1…1 (reverse limited to 30 %), steering −1…1 |
-| Vector observations (10) | goal position and direction in the robot frame, distance to goal, forward and sideways speed, yaw rate, current steering, tilt |
-| Decisions | every 5 physics steps (20 Hz); max episode length 3000 steps (30 s) |
-| Rewards | +1 goal reached, −1 collision, −1 tipped over, +0.1 per metre of progress towards the goal, −1/3000 per step |
+1. Replace the files in `Assets/URDF/delivery_bot/`.
+2. Delete the old `delivery_bot` object from the scene.
+3. **Tools > Delivery Bot > Setup → Import URDF and configure robot.**
 
-**Curriculum** (in `config/delivery_bot_ppo.yaml`): goal distance 4 → 8 → 15 m and obstacle count 0 → 5 → 12. Each
-lesson ends when the smoothed reward exceeds 0.6.
+The tool imports with Y-axis settings, removes the URDF Importer's keyboard joint controller, places the robot
+and re-saves the prefab. The URDF in the shared submodule (`delivery_bot_description`) should be the same file,
+so the TF tree in ROS matches the simulated robot.
 
-**Domain randomisation** (every episode): link masses ±15 %, motor and servo torque ±15 %, sensor poses ±5 mm and
-±1.5°, plus random start pose, goal position and obstacle layout.
+## Legacy (RL)
+
+Before this migration, the robot was trained with Unity ML-Agents (PPO) to drive to a goal (`DeliveryBotAgent`,
+`TrainingArena`, `config/delivery_bot_ppo.yaml`, Python trainer in `.venv`). That approach has been dropped in
+favour of ROS 2 / Nav2. The remaining ML-Agents code and package are being removed (issue #3), and the RL training
+workflow is no longer supported. See the git history before this change for the old instructions.
 
 ## Known limitations
 
 - Masses, inertias and the radar antenna positions are estimates (see the URDF README).
-- The camera sensors use a placeholder field of view, and visual observations slow training down a lot.
+- The camera field of view is a placeholder.
 - The `<gazebo>` blocks in the URDF are ignored in Unity.
