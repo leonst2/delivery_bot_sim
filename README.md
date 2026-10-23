@@ -36,7 +36,7 @@ now only to simulate the world, the robot's physics and its sensors.
 │  perception / dynamic obstacle tracking → /tracked_obstacles              │
 │  map_server or slam_toolbox, Nav2 (costmaps, planner)                     │
 │  grid-step controller → /cmd_vel, /plan, /grid_step/state                 │
-│  ros2_ws/src/delivery_bot_nav  ← shared Git submodule (same as robot)     │
+│  ros2_ws/src/delivery_bot_core ← shared Git submodule (same as robot)     │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -46,10 +46,13 @@ now only to simulate the world, the robot's physics and its sensors.
 - **Docker:** all ROS 2 nodes run in one container with `network_mode: host`, so the endpoint is reachable on
   `127.0.0.1` and DDS discovery works without port mapping. On macOS, enable host networking in Docker Desktop
   (Settings → Resources → Network). Otherwise, publish port 10000 instead.
-- **Shared navigation code:** the navigation packages (Nav2 parameters, grid-step controller, perception,
-  `delivery_bot_description`) live in a separate repository, included as a Git submodule at
-  `ros2_ws/src/delivery_bot_nav` *(planned)* and pinned to a commit. The physical robot uses the same repository.
-  Sim-only differences (`use_sim_time`, topic remaps) are limited to a `sim` launch argument or a params overlay.
+- **Shared navigation code:** the robot description and navigation packages live in
+  [delivery_bot_core](https://github.com/leonst2/delivery_bot_core). That repo is included here as a Git submodule
+  at `ros2_ws/src/delivery_bot_core`, pinned to a commit. The physical robot
+  ([delivery_bot_os](https://github.com/leonst2/delivery_bot_os)) uses the same repository. Its packages:
+  `delivery_bot` (URDF + meshes, robot_state_publisher), `delivery_bot_navigation` (Nav2 params, `bringup.launch.py`),
+  `delivery_bot_grid_step` and `delivery_bot_perception`. Sim-only differences (`use_sim_time`, topic remaps) go
+  only into `delivery_bot_navigation/config/sim.yaml`, which `bringup.launch.py sim:=true` applies.
 
 ### Grid-step navigation loop
 
@@ -114,8 +117,8 @@ A status bar shows the ROS connection status and the current grid-step state.
 
 ## Quick start
 
-> The Docker setup, the submodule and the ROS-TCP-Connector aren't in the repository yet. These are the
-> intended steps.
+> The Docker setup and the ROS-TCP-Connector aren't in the repository yet, so `docker compose` is an intended
+> step. The submodule is in place.
 
 ```bash
 git clone --recurse-submodules https://github.com/leonst2/delivery_bot_sim.git
@@ -124,6 +127,20 @@ git submodule update --init --recursive
 
 docker compose -f docker/compose.yaml up        # ros_tcp_endpoint on 0.0.0.0:10000, Nav2, grid-step controller
 ```
+
+### Shared code (submodule)
+
+```bash
+scripts/check_urdf_sync.sh      # Unity URDF + meshes byte-identical to delivery_bot_core (also runs in CI)
+scripts/check_core_build.sh     # colcon build + test of the pinned submodule in ros:jazzy (needs Docker)
+
+# Move to a newer delivery_bot_core commit:
+git submodule update --remote ros2_ws/src/delivery_bot_core
+git add ros2_ws/src/delivery_bot_core && git commit -m "Bump delivery_bot_core"
+```
+
+Change navigation code in [delivery_bot_core](https://github.com/leonst2/delivery_bot_core), not here. Then bump the
+pin. CI (`.github/workflows/core-build.yml`) runs both checks on every push.
 
 Then open the city scene in Unity and press **Play**. Set a goal by clicking on the minimap or from ROS:
 
@@ -147,7 +164,8 @@ Assets/
   URDF/
     delivery_bot/ URDF package (urdf/, meshes/, package.xml, README.md with the robot description)
 docker/                         ROS 2 container (Dockerfile, compose.yaml)          (planned)
-ros2_ws/src/delivery_bot_nav/   shared navigation submodule                         (planned)
+ros2_ws/src/delivery_bot_core/  shared submodule: robot description + navigation packages
+scripts/                        check_urdf_sync.sh, check_core_build.sh
 ```
 
 ## The robot in the simulation
@@ -201,8 +219,11 @@ the links are ArticulationBodies.
 3. **Tools > Delivery Bot > Setup → Import URDF and configure robot.**
 
 The tool imports with Y-axis settings, removes the URDF Importer's keyboard joint controller, places the robot
-and re-saves the prefab. The URDF in the shared submodule (`delivery_bot_description`) should be the same file,
-so the TF tree in ROS matches the simulated robot.
+and re-saves the prefab.
+
+The same URDF and STL meshes must also go into `delivery_bot_core/delivery_bot/` (commit there, then bump the
+submodule), so the TF tree in ROS matches the simulated robot. `scripts/check_urdf_sync.sh` fails CI until both
+copies match.
 
 ## Legacy (RL)
 

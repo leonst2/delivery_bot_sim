@@ -1,0 +1,3 @@
+[submodule "ros2_ws/src/delivery_bot_core"]
+	path = ros2_ws/src/delivery_bot_core
+	url = https://github.com/leonst2/delivery_bot_core.git
