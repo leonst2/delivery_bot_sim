@@ -73,6 +73,9 @@ namespace DeliveryBot
         public float ForwardSpeed => Vector3.Dot(Root.linearVelocity, Root.transform.forward);
         public float CommandedSteeringAngle => m_SteerCommand;
 
+        /// <summary>Raised when any link of the robot starts touching another collider.</summary>
+        public event System.Action<Collision> Collided;
+
         ArticulationBody m_SteerL, m_SteerR, m_WheelFL, m_WheelFR, m_WheelRL, m_WheelRR;
         readonly List<ArticulationBody> m_FrontSusp = new List<ArticulationBody>();
         readonly List<ArticulationBody> m_RearSusp = new List<ArticulationBody>();
@@ -98,6 +101,13 @@ namespace DeliveryBot
                 return;
             }
             Root = System.Array.Find(m_AllBodies, b => b.isRoot);
+
+            foreach (var body in m_AllBodies)
+            {
+                if (!body.TryGetComponent(out LinkCollisionReporter reporter))
+                    reporter = body.gameObject.AddComponent<LinkCollisionReporter>();
+                reporter.CollisionEntered += c => Collided?.Invoke(c);
+            }
 
             var byJoint = new Dictionary<string, ArticulationBody>();
             foreach (var joint in GetComponentsInChildren<UrdfJoint>())

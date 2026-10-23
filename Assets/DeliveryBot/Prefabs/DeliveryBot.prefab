@@ -56,7 +56,6 @@ GameObject:
   m_Component:
   - component: {fileID: 121769641734825901}
   - component: {fileID: 6136206491397697363}
-  - component: {fileID: 8784194456723259471}
   m_Layer: 8
   m_Name: RadarSensor
   m_TagString: Untagged
@@ -93,36 +92,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
   positionJitter: 0.005
   angleJitter: 1.5
---- !u!114 &8784194456723259471
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 119512824602503043}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bb6b867a41448888c1cd4f99643ad71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Sensors.RayPerceptionSensorComponent3D
-  m_SensorName: Radar_right
-  m_DetectableTags:
-  - Obstacle
-  - Wall
-  m_RaysPerDirection: 2
-  m_MaxRayDegrees: 30
-  m_SphereCastRadius: 0.15
-  m_RayLength: 4
-  m_RayLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967035
-  m_ObservationStacks: 1
-  m_AlternatingRayOrder: 1
-  m_UseBatchedRaycasts: 0
-  rayHitColor: {r: 1, g: 0, b: 0, a: 1}
-  rayMissColor: {r: 1, g: 1, b: 1, a: 1}
-  m_StartVerticalOffset: 0
-  m_EndVerticalOffset: 0
 --- !u!1 &145322583484352420
 GameObject:
   m_ObjectHideFlags: 0
@@ -669,6 +638,7 @@ Transform:
   - {fileID: 8631919980398443626}
   - {fileID: 2391359069599545101}
   - {fileID: 7205396864754435894}
+  - {fileID: 5080136781693913542}
   m_Father: {fileID: 3199226445728968601}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5367586394777367400
@@ -694,8 +664,8 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorPosition: {x: -0.1575, y: 0.418, z: 0.5326}
+  m_ParentAnchorRotation: {x: -0.13309205, y: -0.13309205, z: 0.69446856, w: 0.69446856}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -967,7 +937,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
+  m_ParentAnchorPosition: {x: 0, y: 0.418, z: 0.551}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
@@ -1099,7 +1069,7 @@ ArticulationBody:
   serializedVersion: 6
   m_Mass: 0.01
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorRotation: {x: 0.70710814, y: -0.0000013113022, z: 0.7071056, w: -0.0000012516975}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -1259,6 +1229,7 @@ Transform:
   - {fileID: 8516782832923667944}
   - {fileID: 6386248297010170987}
   - {fileID: 852788097059435393}
+  - {fileID: 7880478996334556433}
   m_Father: {fileID: 3199226445728968601}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7794378696583761465
@@ -1284,7 +1255,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
+  m_ParentAnchorPosition: {x: 0.031, y: 0.418, z: 0.551}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
@@ -1724,7 +1695,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4120946769429738792}
   - component: {fileID: 7777776736836943603}
-  - component: {fileID: 7503425333926585295}
   m_Layer: 8
   m_Name: LidarSensor
   m_TagString: Untagged
@@ -1761,36 +1731,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
   positionJitter: 0.005
   angleJitter: 1.5
---- !u!114 &7503425333926585295
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1753928010292409819}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bb6b867a41448888c1cd4f99643ad71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Sensors.RayPerceptionSensorComponent3D
-  m_SensorName: Lidar
-  m_DetectableTags:
-  - Obstacle
-  - Wall
-  m_RaysPerDirection: 18
-  m_MaxRayDegrees: 180
-  m_SphereCastRadius: 0.05
-  m_RayLength: 12
-  m_RayLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967035
-  m_ObservationStacks: 1
-  m_AlternatingRayOrder: 1
-  m_UseBatchedRaycasts: 0
-  rayHitColor: {r: 1, g: 0, b: 0, a: 1}
-  rayMissColor: {r: 1, g: 1, b: 1, a: 1}
-  m_StartVerticalOffset: 0
-  m_EndVerticalOffset: 0
 --- !u!1 &1792706795655238606
 GameObject:
   m_ObjectHideFlags: 0
@@ -1895,8 +1835,8 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorPosition: {x: 0.2132, y: 0.418, z: 0.4872}
+  m_ParentAnchorRotation: {x: 0.32759297, y: 0.32759297, z: 0.62664413, w: 0.62664413}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -2432,7 +2372,7 @@ ArticulationBody:
   serializedVersion: 6
   m_Mass: 0.01
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorRotation: {x: 0.70710814, y: -0.0000013709068, z: 0.7071055, w: -0.0000012218952}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -2503,6 +2443,52 @@ MonoBehaviour:
   jointName: mono_right_camera_optical_joint
   EffortLimit: 1000
   VelocityLimit: 1000
+--- !u!1 &2580026057685699618
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5080136781693913542}
+  - component: {fileID: 7538516191554263844}
+  m_Layer: 8
+  m_Name: CameraSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5080136781693913542
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2580026057685699618}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4884880711248550723}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7538516191554263844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2580026057685699618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 735165f3ca7c04c73880bb8ee7c4a19f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
+  positionJitter: 0.005
+  angleJitter: 1.5
 --- !u!1 &2674309115135682460
 GameObject:
   m_ObjectHideFlags: 0
@@ -3309,9 +3295,7 @@ GameObject:
   - component: {fileID: 6761121630383888769}
   - component: {fileID: 774582680732529530}
   - component: {fileID: 7003725020663584442}
-  - component: {fileID: 9049508847532858418}
-  - component: {fileID: 5253437672141661402}
-  - component: {fileID: 6229387780288671518}
+  - component: {fileID: 4987321395754081735}
   m_Layer: 8
   m_Name: DeliveryBot
   m_TagString: robot
@@ -3395,7 +3379,7 @@ MonoBehaviour:
   invertSteering: 0
   invertWheels: 0
   torqueScale: 1
---- !u!114 &9049508847532858418
+--- !u!114 &4987321395754081735
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3404,70 +3388,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 4397256063833240777}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
+  m_Script: {fileID: 11500000, guid: 3f771cb1674fa4b45b0f7351750b51a4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
-  m_BrainParameters:
-    VectorObservationSize: 10
-    NumStackedVectorObservations: 1
-    m_ActionSpec:
-      m_NumContinuousActions: 2
-      BranchSizes: 
-    VectorActionSize: 02000000
-    VectorActionDescriptions: []
-    VectorActionSpaceType: 1
-    hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
-  m_InferenceDevice: 0
-  m_BehaviorType: 0
-  m_BehaviorName: DeliveryBot
-  TeamId: 0
-  m_UseChildSensors: 1
-  m_UseChildActuators: 1
-  m_DeterministicInference: 0
-  m_ObservableAttributeHandling: 0
---- !u!114 &5253437672141661402
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4397256063833240777}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d59c7bcf19159405ca9dc71323eb3d48, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.DeliveryBotAgent
-  agentParameters:
-    maxStep: 0
-  hasUpgradedFromAgentParameters: 1
-  MaxStep: 3000
-  arena: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.DeliveryBotKeyboardDrive
   maxSpeed: 2
-  reverseFraction: 0.3
-  goalRadius: 0.6
-  minUprightness: 0.6
-  goalReward: 1
-  collisionPenalty: -1
-  flipPenalty: -1
-  progressReward: 0.1
-  massRandomization: 0.15
-  torqueRandomization: 0.15
---- !u!114 &6229387780288671518
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4397256063833240777}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.DecisionRequester
-  DecisionPeriod: 5
-  DecisionStep: 0
-  TakeActionsBetweenDecisions: 1
+  maxReverseSpeed: 0.6
 --- !u!1 &4548038261564509272
 GameObject:
   m_ObjectHideFlags: 0
@@ -3529,7 +3454,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.084
-  m_ParentAnchorPosition: {x: -0.058300003, y: -0.0909, z: 0.215}
+  m_ParentAnchorPosition: {x: -0.058300003, y: -0.09089999, z: 0.215}
   m_ParentAnchorRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
@@ -3679,7 +3604,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 2.8
-  m_ParentAnchorPosition: {x: -0.04450001, y: 0, z: -0.02000001}
+  m_ParentAnchorPosition: {x: -0.04450001, y: 0.000000007450581, z: -0.02000001}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0, w: 1}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3921,8 +3846,8 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorPosition: {x: -0.2132, y: 0.418, z: 0.4872}
+  m_ParentAnchorRotation: {x: -0.32759297, y: -0.32759297, z: 0.62664413, w: 0.62664413}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -4053,7 +3978,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
+  m_ParentAnchorPosition: {x: 0, y: 0.5146, z: 0.455}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
@@ -4185,7 +4110,7 @@ ArticulationBody:
   serializedVersion: 6
   m_Mass: 0.01
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorRotation: {x: 0.70710814, y: -0.0000013113022, z: 0.70710564, w: -0.0000012218952}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -4404,7 +4329,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 2.8
-  m_ParentAnchorPosition: {x: 0.04450001, y: 0, z: -0.02000001}
+  m_ParentAnchorPosition: {x: 0.04450001, y: 0.000000007450581, z: -0.02000001}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0, w: 1}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -4860,6 +4785,7 @@ Transform:
   - {fileID: 9189367262465694190}
   - {fileID: 8761249391824259161}
   - {fileID: 1693033921621396571}
+  - {fileID: 4862016782444902797}
   m_Father: {fileID: 3199226445728968601}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1440930446894709276
@@ -4885,8 +4811,8 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorPosition: {x: 0.1575, y: 0.418, z: 0.5326}
+  m_ParentAnchorRotation: {x: 0.13309205, y: 0.13309205, z: 0.69446856, w: 0.69446856}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -5012,7 +4938,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8956544015127481919}
   - component: {fileID: 7462905296343473340}
-  - component: {fileID: 3491871785446263844}
   m_Layer: 8
   m_Name: RadarSensor
   m_TagString: Untagged
@@ -5049,36 +4974,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
   positionJitter: 0.005
   angleJitter: 1.5
---- !u!114 &3491871785446263844
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5807507335854716328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bb6b867a41448888c1cd4f99643ad71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Sensors.RayPerceptionSensorComponent3D
-  m_SensorName: Radar_left
-  m_DetectableTags:
-  - Obstacle
-  - Wall
-  m_RaysPerDirection: 2
-  m_MaxRayDegrees: 30
-  m_SphereCastRadius: 0.15
-  m_RayLength: 4
-  m_RayLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967035
-  m_ObservationStacks: 1
-  m_AlternatingRayOrder: 1
-  m_UseBatchedRaycasts: 0
-  rayHitColor: {r: 1, g: 0, b: 0, a: 1}
-  rayMissColor: {r: 1, g: 1, b: 1, a: 1}
-  m_StartVerticalOffset: 0
-  m_EndVerticalOffset: 0
 --- !u!1 &5939977042808346936
 GameObject:
   m_ObjectHideFlags: 0
@@ -5114,6 +5009,7 @@ Transform:
   - {fileID: 5794080267539327724}
   - {fileID: 2334247378902540951}
   - {fileID: 5773445732559295602}
+  - {fileID: 5607851590916847503}
   m_Father: {fileID: 3199226445728968601}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &952399485337405966
@@ -5139,7 +5035,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.01
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
+  m_ParentAnchorPosition: {x: -0.031, y: 0.418, z: 0.551}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
@@ -5211,6 +5107,98 @@ MonoBehaviour:
   jointName: stereo_left_camera_joint
   EffortLimit: 1000
   VelocityLimit: 1000
+--- !u!1 &5951976567378661173
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4862016782444902797}
+  - component: {fileID: 8557673864999135872}
+  m_Layer: 8
+  m_Name: CameraSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4862016782444902797
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5951976567378661173}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2824588821838994393}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8557673864999135872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5951976567378661173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 735165f3ca7c04c73880bb8ee7c4a19f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
+  positionJitter: 0.005
+  angleJitter: 1.5
+--- !u!1 &6019362177876684639
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5607851590916847503}
+  - component: {fileID: 8518313751640445111}
+  m_Layer: 8
+  m_Name: CameraSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5607851590916847503
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6019362177876684639}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2068000000339576097}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8518313751640445111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6019362177876684639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 735165f3ca7c04c73880bb8ee7c4a19f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
+  positionJitter: 0.005
+  angleJitter: 1.5
 --- !u!1 &6096354583292838604
 GameObject:
   m_ObjectHideFlags: 0
@@ -5389,6 +5377,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Robotics.UrdfImporter::Unity.Robotics.UrdfImporter.UrdfVisual
   geometryType: 3
+--- !u!1 &6300632216768510351
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7880478996334556433}
+  - component: {fileID: 5903056544743737109}
+  m_Layer: 8
+  m_Name: CameraSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7880478996334556433
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6300632216768510351}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9189429501785874743}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5903056544743737109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6300632216768510351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 735165f3ca7c04c73880bb8ee7c4a19f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
+  positionJitter: 0.005
+  angleJitter: 1.5
 --- !u!1 &6767927745448968388
 GameObject:
   m_ObjectHideFlags: 0
@@ -5644,7 +5678,7 @@ ArticulationBody:
   serializedVersion: 6
   m_Mass: 0.01
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorRotation: {x: 0.70710814, y: -0.0000013113022, z: 0.7071056, w: -0.0000012516975}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_MatchAnchors: 1
@@ -6783,7 +6817,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 6
   m_Mass: 0.084
-  m_ParentAnchorPosition: {x: 0.058300003, y: -0.0909, z: 0.215}
+  m_ParentAnchorPosition: {x: 0.058300003, y: -0.09089999, z: 0.215}
   m_ParentAnchorRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
