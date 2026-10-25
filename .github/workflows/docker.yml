@@ -18,7 +18,7 @@ jobs:
         run: docker compose -f docker/compose.yaml build
       - name: Build and test delivery_bot_core in the image
         run: |
-          docker run --rm -v "$PWD/ros2_ws/src:/ws/src:ro" delivery_bot_ros:jazzy \
+          docker run --rm -v "$PWD/ros2_ws/src:/ws/src:ro" delivery_bot_sim_ros:jazzy \
             bash -c "cd /ws && colcon test --event-handlers console_cohesion+ && colcon test-result --verbose"
       - name: Endpoint starts
         run: |
