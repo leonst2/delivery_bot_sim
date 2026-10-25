@@ -1,30 +1,9 @@
-# ROS 2 Jazzy environment for the self-programmed delivery_bot stack (issue #5).
+# Simulation layer (delivery_bot_sim#5): everything the Unity simulation needs to talk to the delivery_bot_core stack.
 #
-# Based on ros-core on purpose: the ros-base image ships robot_state_publisher and kdl_parser, which the
-# self-programmed stack must not use. Dependencies are installed here instead of by rosdep at runtime, so a
-# package.xml can't pull a forbidden package back in.
-FROM ros:jazzy-ros-core
-
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        git \
-        netcat-openbsd \
-        python3-colcon-common-extensions \
-        python3-numpy \
-        python3-pytest \
-        python3-rosdep \
-        libeigen3-dev \
-        libtinyxml2-dev \
-        ros-jazzy-ament-cmake-gtest \
-        ros-jazzy-ament-cmake-pytest \
-        ros-jazzy-ros2cli-common-extensions \
-        ros-jazzy-rosbag2 \
-        ros-jazzy-tf2-msgs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Rust toolchain (rclrs, colcon-cargo, colcon-ros-cargo): added once the spike in delivery_bot_core#2 settles it.
+# The base is the delivery_bot_core development image (ROS 2 Jazzy ros-core + C++/Python/Rust toolchains, built from
+# ros2_ws/src/delivery_bot_core/docker). compose.yaml builds it as the "core-dev" context. This layer only adds the
+# Unity ROS-TCP-Endpoint and an entrypoint that builds the mounted workspace.
+FROM core-dev
 
 # Unity ROS-TCP-Endpoint, ROS 2 branch (main-ros2 = v0.7.0), pinned. Built into its own overlay so the
 # workspace volumes mounted at /ws can't hide it.
@@ -37,10 +16,10 @@ RUN mkdir -p /opt/ros_tcp_endpoint/src \
     && colcon build --event-handlers console_cohesion+ \
     && rm -rf build log
 
-COPY check_forbidden_packages.sh entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/check_forbidden_packages.sh /usr/local/bin/entrypoint.sh \
+COPY entrypoint.sh /usr/local/bin/sim_entrypoint.sh
+RUN chmod +x /usr/local/bin/sim_entrypoint.sh \
     && check_forbidden_packages.sh
 
 WORKDIR /ws
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["sim_entrypoint.sh"]
 CMD ["bash"]

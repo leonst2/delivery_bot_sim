@@ -1,10 +1,20 @@
-# ROS 2 side of the simulation (issue #5). Run from the repo root:
-#   docker compose -f docker/compose.yaml up
+# ROS 2 side of the simulation (delivery_bot_sim#5). Run from the repo root:
+#   docker compose -f docker/compose.yaml up -d
 # macOS without Docker Desktop host networking: add -f docker/compose.ports.yaml
 services:
+  # Build environment from the shared stack repo (ros-core + C++/Python/Rust). Only built, never started.
+  core-dev:
+    build: ../ros2_ws/src/delivery_bot_core/docker
+    image: delivery_bot_core_dev:jazzy
+    scale: 0
+
+  # Simulation layer on top of it: ROS-TCP-Endpoint + workspace build of ros2_ws/src.
   ros:
-    build: .
-    image: delivery_bot_ros:jazzy
+    build:
+      context: .
+      additional_contexts:
+        core-dev: "service:core-dev"
+    image: delivery_bot_sim_ros:jazzy
     network_mode: host
     init: true
     environment:
@@ -14,7 +24,7 @@ services:
       - ws_build:/ws/build
       - ws_install:/ws/install
       - ws_log:/ws/log
-    # Unity connects to this endpoint over TCP (ROS-TCP-Connector, issue #4).
+    # Unity connects to this endpoint over TCP (ROS-TCP-Connector, delivery_bot_sim#4).
     command: >-
       ros2 run ros_tcp_endpoint default_server_endpoint
       --ros-args -p ROS_IP:=0.0.0.0 -p ROS_TCP_PORT:=10000

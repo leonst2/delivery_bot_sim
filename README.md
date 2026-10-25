@@ -112,7 +112,7 @@ A status bar shows the ROS connection status and the current grid-step state.
 | Unity | 6000.3.26f1 (Unity 6.3), URP |
 | URDF Importer | `com.unity.robotics.urdf-importer` v0.5.2 (git) |
 | ROS-TCP-Connector | `com.unity.robotics.ros-tcp-connector` (git, pinned tag) *(planned)* |
-| ROS 2 | Jazzy, in Docker (`docker/`: `ros:jazzy-ros-core` + build tools + `ros_tcp_endpoint` v0.7.0) |
+| ROS 2 | Jazzy, in Docker: core dev image (`ros:jazzy-ros-core` + C++/Python/Rust) + sim layer with `ros_tcp_endpoint` v0.7.0 |
 | Docker | Docker Desktop. On macOS either enable host networking or use `docker/compose.ports.yaml` |
 
 ## Quick start
@@ -130,9 +130,14 @@ docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # mac
 docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 node list"
 ```
 
-The container builds `ros2_ws/src` on every start (cached in named volumes, so restarts take seconds). The image
-build fails if a forbidden package (Nav2, slam_toolbox, AMCL, map_server, robot_state_publisher, kdl_parser) is
-present, which is why it is based on `ros:jazzy-ros-core` rather than `ros:jazzy`.
+`docker compose build` builds two images:
+
+- **`delivery_bot_core_dev:jazzy`** from `ros2_ws/src/delivery_bot_core/docker/` (the shared repo): ROS 2 Jazzy
+  ros-core with the C++, Python and Rust toolchains. Its build fails if a forbidden package (Nav2, slam_toolbox, AMCL,
+  map_server, robot_state_publisher, kdl_parser) is present, which is why it is based on `ros:jazzy-ros-core` rather
+  than `ros:jazzy`.
+- **`delivery_bot_sim_ros:jazzy`** from `docker/` (this repo): the core image plus the Unity ROS-TCP-Endpoint and an
+  entrypoint that builds `ros2_ws/src` on every start (cached in named volumes, so restarts take seconds).
 
 ### Shared code (submodule)
 
@@ -170,7 +175,7 @@ Assets/
     Materials/    ground and wall materials, floor physics material
   URDF/
     delivery_bot/ URDF package (urdf/, meshes/, package.xml, README.md with the robot description)
-docker/                         ROS 2 container (Dockerfile, compose.yaml, compose.ports.yaml, entrypoint)
+docker/                         simulation layer on the core dev image (Dockerfile, compose.yaml, compose.ports.yaml)
 ros2_ws/src/delivery_bot_core/  shared submodule: robot description + navigation packages
 scripts/                        check_urdf_sync.sh, check_core_build.sh
 ```
