@@ -1,0 +1,8 @@
+# Fallback for macOS when Docker Desktop host networking is disabled: publish the endpoint port instead.
+# Unity only needs TCP 10000; ROS 2 CLI tools then run inside the container (docker compose exec ros ...).
+#   docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up
+services:
+  ros:
+    network_mode: bridge
+    ports:
+      - "10000:10000"

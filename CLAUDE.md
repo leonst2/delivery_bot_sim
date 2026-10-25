@@ -8,8 +8,9 @@ controlled by Reinforcement Learning. README.md has the architecture diagram, th
 loop and the UI layout. Read it first and don't duplicate it here.
 
 **Migration status:** most of the ROS 2 side is still to be built. Work is tracked in GitHub issues #2–#21 and the
-*delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet, such as `docker/`. Check
-before assuming they exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6).
+*delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet. Check before assuming they
+exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6), and so does the ROS 2 container in
+`docker/` (#5, first pass: endpoint + workspace build; Rust and the stack launch come later).
 
 ## Commands
 
@@ -23,14 +24,18 @@ scripts/check_core_build.sh                      # colcon build + test of the su
 git submodule update --remote ros2_ws/src/delivery_bot_core   # bump the pin, then commit the submodule
 ```
 
-Planned workflow, once the Docker issue (#5) has landed:
+ROS 2 runs only in Docker (there's no native ROS 2 on the Mac):
 
 ```bash
-docker compose -f docker/compose.yaml up         # ros_tcp_endpoint :10000, Nav2, grid-step controller
-# then press Play in Unity
-ros2 topic echo /clock                           # bridge alive, sim time advancing
-ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
+docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # endpoint on :10000 (macOS fallback)
+docker compose -f docker/compose.yaml up -d      # with Docker Desktop host networking enabled instead
+docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic list"
+docker compose -f docker/compose.yaml run --rm ros bash -c "cd /ws && colcon test && colcon test-result --verbose"
+docker compose -f docker/compose.yaml down       # named volumes keep the workspace build cache
 ```
+
+The entrypoint rebuilds `ros2_ws/src` (mounted read-only) incrementally on every start, so a restart picks up
+submodule changes. `SKIP_BUILD=1` skips that.
 
 ## Architecture rules
 
@@ -95,8 +100,13 @@ ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
 - **Project settings:** physics 100 Hz (fixed timestep 0.01 s), solver iterations 12/4, `Robot` layer (8) doesn't
   collide with itself. Sensor rays must exclude the `Robot` layer. Keep Version Control mode on *Visible Meta
   Files* and Run In Background on, since the sim has to keep running while ROS tools have focus.
-- **Docker on macOS:** `network_mode: host` needs host networking enabled in Docker Desktop. Otherwise, publish
-  port 10000.
+- **Docker on macOS:** `network_mode: host` needs host networking enabled in Docker Desktop (Settings → Resources →
+  Network). Without it the port isn't reachable from the Mac; use `docker/compose.ports.yaml`, which publishes
+  10000. In that mode ROS 2 CLI tools only work inside the container.
+- **Docker image base:** `ros:jazzy-ros-core`, not `ros:jazzy`. The ros-base image ships `robot_state_publisher` and
+  `kdl_parser`, which the stack must not use, and `check_forbidden_packages.sh` fails the image build if any forbidden
+  package is present. Add dependencies to the Dockerfile; never run `rosdep install` in the container, because the
+  old core scaffold still declares `robot_state_publisher`.
 
 ## Working with the Unity MCP tools
 

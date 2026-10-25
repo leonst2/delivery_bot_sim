@@ -112,21 +112,27 @@ A status bar shows the ROS connection status and the current grid-step state.
 | Unity | 6000.3.26f1 (Unity 6.3), URP |
 | URDF Importer | `com.unity.robotics.urdf-importer` v0.5.2 (git) |
 | ROS-TCP-Connector | `com.unity.robotics.ros-tcp-connector` (git, pinned tag) *(planned)* |
-| ROS 2 | Jazzy, in Docker (`ros:jazzy` + Nav2, slam_toolbox, ros_tcp_endpoint) *(planned)* |
-| Docker | Docker Desktop with host networking enabled (macOS) |
+| ROS 2 | Jazzy, in Docker (`docker/`: `ros:jazzy-ros-core` + build tools + `ros_tcp_endpoint` v0.7.0) |
+| Docker | Docker Desktop. On macOS either enable host networking or use `docker/compose.ports.yaml` |
 
 ## Quick start
 
-> The Docker setup and the ROS-TCP-Connector aren't in the repository yet, so `docker compose` is an intended
-> step. The submodule is in place.
+> The ROS 2 container runs the TCP endpoint and builds the shared workspace. The Unity side of the bridge (#4) and
+> the stack launch (delivery_bot_core#4) are still to come.
 
 ```bash
 git clone --recurse-submodules https://github.com/leonst2/delivery_bot_sim.git
 # or, in an existing clone:
 git submodule update --init --recursive
 
-docker compose -f docker/compose.yaml up        # ros_tcp_endpoint on 0.0.0.0:10000, Nav2, grid-step controller
+docker compose -f docker/compose.yaml up -d     # ros_tcp_endpoint on 0.0.0.0:10000 (Linux, or macOS with host networking)
+docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # macOS without host networking
+docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 node list"
 ```
+
+The container builds `ros2_ws/src` on every start (cached in named volumes, so restarts take seconds). The image
+build fails if a forbidden package (Nav2, slam_toolbox, AMCL, map_server, robot_state_publisher, kdl_parser) is
+present, which is why it is based on `ros:jazzy-ros-core` rather than `ros:jazzy`.
 
 ### Shared code (submodule)
 
@@ -164,7 +170,7 @@ Assets/
     Materials/    ground and wall materials, floor physics material
   URDF/
     delivery_bot/ URDF package (urdf/, meshes/, package.xml, README.md with the robot description)
-docker/                         ROS 2 container (Dockerfile, compose.yaml)          (planned)
+docker/                         ROS 2 container (Dockerfile, compose.yaml, compose.ports.yaml, entrypoint)
 ros2_ws/src/delivery_bot_core/  shared submodule: robot description + navigation packages
 scripts/                        check_urdf_sync.sh, check_core_build.sh
 ```

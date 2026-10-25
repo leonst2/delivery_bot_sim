@@ -1,0 +1,29 @@
+name: docker
+
+on:
+  push:
+    paths: ["docker/**", "ros2_ws/**", ".github/workflows/docker.yml"]
+  pull_request:
+    paths: ["docker/**", "ros2_ws/**", ".github/workflows/docker.yml"]
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # The build fails if a forbidden package (Nav2, robot_state_publisher, ...) ends up in the image.
+      - name: Build image
+        run: docker compose -f docker/compose.yaml build
+      - name: Build and test delivery_bot_core in the image
+        run: |
+          docker run --rm -v "$PWD/ros2_ws/src:/ws/src:ro" delivery_bot_ros:jazzy \
+            bash -c "cd /ws && colcon test --event-handlers console_cohesion+ && colcon test-result --verbose"
+      - name: Endpoint starts
+        run: |
+          docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d
+          for i in $(seq 1 60); do docker compose -f docker/compose.yaml logs ros | grep -q "Starting server" && break; sleep 1; done
+          docker compose -f docker/compose.yaml logs ros | tail -20
+          nc -z 127.0.0.1 10000
+          docker compose -f docker/compose.yaml down
