@@ -8,8 +8,9 @@ controlled by Reinforcement Learning. README.md has the architecture diagram, th
 loop and the UI layout. Read it first and don't duplicate it here.
 
 **Migration status:** most of the ROS 2 side is still to be built. Work is tracked in GitHub issues #2–#21 and the
-*delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet, such as `docker/`. Check
-before assuming they exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6).
+*delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet. Check before assuming they
+exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6), and so does the ROS 2 container
+(#5: core dev image with C++/Python/Rust + this repo's endpoint layer; the stack launch comes with core #4).
 
 ## Commands
 
@@ -19,18 +20,26 @@ There are no tests, no linter and no command-line build. Compile errors show up 
 ```bash
 git submodule update --init --recursive          # shared code (delivery_bot_core)
 scripts/check_urdf_sync.sh                       # Unity URDF/meshes == submodule copy (CI too)
-scripts/check_core_build.sh                      # colcon build + test of the submodule in ros:jazzy (needs Docker)
+scripts/check_core_build.sh                      # colcon build + test of the submodule in its dev image (needs Docker)
 git submodule update --remote ros2_ws/src/delivery_bot_core   # bump the pin, then commit the submodule
 ```
 
-Planned workflow, once the Docker issue (#5) has landed:
+ROS 2 runs only in Docker (there's no native ROS 2 on the Mac):
 
 ```bash
-docker compose -f docker/compose.yaml up         # ros_tcp_endpoint :10000, Nav2, grid-step controller
-# then press Play in Unity
-ros2 topic echo /clock                           # bridge alive, sim time advancing
-ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
+docker compose -f docker/compose.yaml build      # builds the core dev image (submodule) + the sim layer on top
+docker compose -f docker/compose.yaml up -d      # endpoint on :10000 (host networking, enabled in Docker Desktop)
+docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # fallback without host networking
+docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic list"
+docker compose -f docker/compose.yaml run --rm ros bash -c "cd /ws && colcon test && colcon test-result --verbose"
+docker compose -f docker/compose.yaml down       # named volumes keep the workspace build cache
 ```
+
+**Image split:** the build environment (ros-core + C++/Python/Rust toolchains, ros2_rust overlay, forbidden-package
+check) is `delivery_bot_core/docker/Dockerfile` in the submodule. Change toolchains there, in delivery_bot_core.
+`docker/Dockerfile` in this repo is only the simulation layer `FROM` that image: ROS-TCP-Endpoint + an entrypoint
+that rebuilds `ros2_ws/src` (mounted read-only) incrementally on every start, so a restart picks up submodule
+changes. `SKIP_BUILD=1` skips the build.
 
 ## Architecture rules
 
@@ -95,8 +104,16 @@ ros2 run tf2_ros tf2_echo odom base_link         # odometry/TF from Unity
 - **Project settings:** physics 100 Hz (fixed timestep 0.01 s), solver iterations 12/4, `Robot` layer (8) doesn't
   collide with itself. Sensor rays must exclude the `Robot` layer. Keep Version Control mode on *Visible Meta
   Files* and Run In Background on, since the sim has to keep running while ROS tools have focus.
-- **Docker on macOS:** `network_mode: host` needs host networking enabled in Docker Desktop. Otherwise, publish
-  port 10000.
+- **Docker on macOS:** `network_mode: host` needs host networking enabled in Docker Desktop (Settings → Resources →
+  Network; it's on for this machine). Without it the port isn't reachable from the Mac; use
+  `docker/compose.ports.yaml`, which publishes 10000. In that mode ROS 2 CLI tools only work inside the container.
+- **Docker image base:** the core dev image is `ros:jazzy-ros-core`, not `ros:jazzy`. The ros-base image ships
+  `robot_state_publisher` and `kdl_parser`, which the stack must not use, and `check_forbidden_packages.sh` fails the
+  image build if any forbidden package is present. Add dependencies to the core Dockerfile; never run
+  `rosdep install` in the container, because the old core scaffold still declares `robot_state_publisher`.
+- **Rust in ROS 2:** rclrs comes from crates.io and message types from the `ros-env` crate. Message packages only get
+  Rust bindings if they're built with `rosidl_generator_rs` present, which the core image provides in
+  `/opt/ros2_rust` (sourced by the entrypoints).
 
 ## Working with the Unity MCP tools
 

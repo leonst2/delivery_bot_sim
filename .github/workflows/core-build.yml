@@ -1,5 +1,7 @@
 name: delivery_bot_core
 
+# Building and testing the pinned submodule happens in docker.yml (core dev image + sim layer), which runs
+# whenever docker/ or the submodule changes. scripts/check_core_build.sh does the same locally.
 on:
   push:
   pull_request:
@@ -12,11 +14,3 @@ jobs:
         with:
           submodules: recursive
       - run: scripts/check_urdf_sync.sh
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - run: scripts/check_core_build.sh
