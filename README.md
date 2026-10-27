@@ -151,7 +151,8 @@ git add ros2_ws/src/delivery_bot_core && git commit -m "Bump delivery_bot_core"
 ```
 
 Change navigation code in [delivery_bot_core](https://github.com/leonst2/delivery_bot_core), not here. Then bump the
-pin. CI (`.github/workflows/core-build.yml`) runs both checks on every push.
+pin. CI runs the URDF check on every push (`.github/workflows/core-build.yml`), and builds and tests the pinned core
+in its dev image whenever `docker/` or the submodule changes (`.github/workflows/docker.yml`).
 
 Then open `Assets/DeliveryBot/Scenes/CitySim.unity` in Unity and press **Play**. Set a goal by clicking on the minimap or from ROS:
 
