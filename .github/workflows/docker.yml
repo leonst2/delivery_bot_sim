@@ -20,10 +20,13 @@ jobs:
         run: |
           docker run --rm -v "$PWD/ros2_ws/src:/ws/src:ro" delivery_bot_sim_ros:jazzy \
             bash -c "cd /ws && colcon test --event-handlers console_cohesion+ && colcon test-result --verbose"
-      - name: Endpoint starts
+      # sim.launch.py: the endpoint, plus the stack once delivery_bot_core provides delivery_bot_bringup.
+      - name: Endpoint and stack start
         run: |
           docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d
           for i in $(seq 1 60); do docker compose -f docker/compose.yaml logs ros | grep -q "Starting server" && break; sleep 1; done
-          docker compose -f docker/compose.yaml logs ros | tail -20
+          sleep 5
+          docker compose -f docker/compose.yaml logs ros | tail -40
           nc -z 127.0.0.1 10000
+          ! docker compose -f docker/compose.yaml logs ros | grep -q "process has died"
           docker compose -f docker/compose.yaml down

@@ -17,6 +17,7 @@ RUN mkdir -p /opt/ros_tcp_endpoint/src \
     && rm -rf build log
 
 COPY entrypoint.sh /usr/local/bin/sim_entrypoint.sh
+COPY sim.launch.py /opt/delivery_bot_sim/sim.launch.py
 RUN chmod +x /usr/local/bin/sim_entrypoint.sh \
     && check_forbidden_packages.sh
 

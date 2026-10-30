@@ -117,18 +117,26 @@ A status bar shows the ROS connection status and the current grid-step state.
 
 ## Quick start
 
-> The ROS 2 container runs the TCP endpoint and builds the shared workspace. The Unity side of the bridge (#4) and
-> the stack launch (delivery_bot_core#4) are still to come.
+> The ROS 2 container builds the shared workspace and starts `docker/sim.launch.py`: the TCP endpoint, plus
+> `stack.launch.py sim:=true` as soon as the pinned delivery_bot_core provides `delivery_bot_bringup`
+> (delivery_bot_core#4). Until then it starts the endpoint only. The Unity side of the bridge (#4) is still to come.
 
 ```bash
 git clone --recurse-submodules https://github.com/leonst2/delivery_bot_sim.git
 # or, in an existing clone:
 git submodule update --init --recursive
 
-docker compose -f docker/compose.yaml up -d     # ros_tcp_endpoint on 0.0.0.0:10000 (Linux, or macOS with host networking)
+docker compose -f docker/compose.yaml up -d     # endpoint on 0.0.0.0:10000 + stack (Linux, or macOS with host networking)
 docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # macOS without host networking
 docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 node list"
+ROS_DOMAIN_ID=7 docker compose -f docker/compose.yaml up -d                # other DDS domain (default 0)
+docker compose -f docker/compose.yaml run --rm ros ros2 launch /opt/delivery_bot_sim/sim.launch.py stack:=false   # endpoint only
 ```
+
+Once Unity is in Play mode, `/clock` shows up in the container:
+`docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic list | grep /clock"`.
+A source change on the host only needs `docker compose -f docker/compose.yaml restart ros`; the entrypoint rebuilds
+the workspace incrementally.
 
 `docker compose build` builds two images:
 
@@ -143,7 +151,7 @@ docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/s
 
 ```bash
 scripts/check_urdf_sync.sh      # Unity URDF + meshes byte-identical to delivery_bot_core (also runs in CI)
-scripts/check_core_build.sh     # colcon build + test of the pinned submodule in ros:jazzy (needs Docker)
+scripts/check_core_build.sh     # colcon build + test of the pinned submodule in its dev image (needs Docker)
 
 # Move to a newer delivery_bot_core commit:
 git submodule update --remote ros2_ws/src/delivery_bot_core
