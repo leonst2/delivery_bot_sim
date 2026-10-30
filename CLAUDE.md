@@ -113,8 +113,9 @@ changes. `SKIP_BUILD=1` skips the build.
     when the endpoint stops or is missing at Play. `IsConnected` is stale while paused, because nothing is sent.
   - A domain reload during Play clears the connection without reconnecting. After editing scripts, wait for the
     compile before entering Play.
-- **Project settings:** physics 50 Hz (fixed timestep 0.02 s), solver iterations 12/4, `Robot` layer (8) doesn't
-  collide with itself. Sensor rays must exclude the `Robot` layer. Keep Version Control mode on *Visible Meta
+- **Project settings:** physics 50 Hz. The rate is configured only by `Fixed Timestep` (0.02 s) in
+  `ProjectSettings/TimeManager.asset`, and `/clock` and the per-step topics follow it. Solver iterations 12/4,
+  `Robot` layer (8) doesn't collide with itself. Sensor rays must exclude the `Robot` layer. Keep Version Control mode on *Visible Meta
   Files* and Run In Background on, since the sim has to keep running while ROS tools have focus.
 - **Docker on macOS:** `network_mode: host` needs host networking enabled in Docker Desktop (Settings → Resources →
   Network; it's on for this machine). Without it the port isn't reachable from the Mac; use

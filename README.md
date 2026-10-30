@@ -223,7 +223,7 @@ two steering joints and a matching speed on each of the four driven wheels. `/cm
 | Wheels (4 hub motors) | velocity: damping 10, force limit 10 Nm |
 | Suspension (passive) | spring: 333 Nm/rad front, 210 Nm/rad rear, damping 10 |
 
-Physics runs at 50 Hz (fixed timestep 0.02 s, 12/4 solver iterations). Unity frames: robot forward = +Z,
+Physics runs at 50 Hz (`Fixed Timestep` 0.02 s in `ProjectSettings/TimeManager.asset`, 12/4 solver iterations). Unity frames: robot forward = +Z,
 left = −X, up = +Y. `base_link` origin = ground point under the rear-axle centre. Joint signs follow the URDF:
 positive steering = left turn, positive wheel speed = forward.
 
