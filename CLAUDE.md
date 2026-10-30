@@ -10,7 +10,7 @@ loop and the UI layout. Read it first and don't duplicate it here.
 **Migration status:** most of the ROS 2 side is still to be built. Work is tracked in GitHub issues #2–#21 and the
 *delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet. Check before assuming they
 exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6), and so does the ROS 2 container
-(#5: core dev image with C++/Python/Rust + this repo's endpoint layer; the stack launch comes with core #4).
+(#5: core dev image with C++/Python/Rust + this repo's endpoint layer; `docker/sim.launch.py` starts the endpoint and, once core #4 provides `delivery_bot_bringup`, `stack.launch.py sim:=true`).
 
 ## Commands
 
