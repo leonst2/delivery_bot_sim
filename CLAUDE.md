@@ -100,7 +100,19 @@ changes. `SKIP_BUILD=1` skips the build.
   save a nested part of a prefab instance as its own prefab.
 - **Package pins** (`Packages/manifest.json`): URDF Importer from git `#v0.5.2`. The template packages are pinned to
   the versions 6.3 resolves. Input System 1.12.0 fails to compile on 6.3 (`BuildTarget.ReservedCFE`), so don't
-  downgrade it. `com.unity.ai.assistant` provides the Unity MCP bridge.
+  downgrade it. `com.unity.ai.assistant` provides the Unity MCP bridge. ROS-TCP-Connector is pinned to `#v0.7.1`,
+  which accepts our endpoint v0.7.0.
+- **ROS-TCP-Connector setup:** ROS 2 mode is the scripting define `ROS2` (Standalone, in `ProjectSettings`). Without
+  it, `TimeMsg`/`HeaderMsg` silently use the ROS 1 layout. The connection settings are in
+  `Assets/Resources/ROSConnectionPrefab.prefab`.
+- **ROS-TCP-Connector pitfalls:**
+  - Publishers must skip publishing while `RosBridgeStatus.IsConnected` is false. The connector queues registrations
+    behind queued messages, so anything published while disconnected is rejected with `Not registered to publish topic`.
+  - Don't use `LastMessageReceivedRealtime` for connection checks: keepalive replies don't update it.
+  - The connector logs a lost connection with `Debug.LogError`, so with the Console's Error Pause on, the sim pauses
+    when the endpoint stops or is missing at Play. `IsConnected` is stale while paused, because nothing is sent.
+  - A domain reload during Play clears the connection without reconnecting. After editing scripts, wait for the
+    compile before entering Play.
 - **Project settings:** physics 100 Hz (fixed timestep 0.01 s), solver iterations 12/4, `Robot` layer (8) doesn't
   collide with itself. Sensor rays must exclude the `Robot` layer. Keep Version Control mode on *Visible Meta
   Files* and Run In Background on, since the sim has to keep running while ROS tools have focus.
