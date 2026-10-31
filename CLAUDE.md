@@ -10,7 +10,8 @@ loop and the UI layout. Read it first and don't duplicate it here.
 **Migration status:** most of the ROS 2 side is still to be built. Work is tracked in GitHub issues #2–#21 and the
 *delivery_bot_sim* project. In the README, *(planned)* marks paths that don't exist yet. Check before assuming they
 exist. The shared submodule `ros2_ws/src/delivery_bot_core` exists (#6), and so does the ROS 2 container
-(#5: core dev image with C++/Python/Rust + this repo's endpoint layer; `docker/sim.launch.py` starts the endpoint and, once core #4 provides `delivery_bot_bringup`, `stack.launch.py sim:=true`).
+(#5: core dev image with C++/Python/Rust + this repo's endpoint layer; `docker/sim.launch.py` starts the endpoint and `stack.launch.py sim:=true` from `delivery_bot_bringup`). The stack's
+nodes are still stubs that only publish heartbeats, until their core cards land.
 
 ## Commands
 
@@ -32,6 +33,7 @@ docker compose -f docker/compose.yaml up -d      # endpoint on :10000 (host netw
 docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d   # fallback without host networking
 docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic list"
 docker compose -f docker/compose.yaml run --rm ros bash -c "cd /ws && colcon test && colcon test-result --verbose"
+docker compose -f docker/compose.yaml exec ros bash -c "source /ws/install/setup.bash && ros2 run delivery_bot_bringup health_check"
 docker compose -f docker/compose.yaml down       # named volumes keep the workspace build cache
 ```
 
@@ -50,7 +52,7 @@ changes. `SKIP_BUILD=1` skips the build.
   ([leonst2/delivery_bot_core](https://github.com/leonst2/delivery_bot_core)), which the physical robot uses too.
   Never fork or copy that logic into this repo, and don't edit files inside the submodule from this repo. Change
   them in delivery_bot_core, push, then bump the pin here. Sim-only differences go only into
-  `delivery_bot_navigation/config/sim.yaml` (applied by `bringup.launch.py sim:=true`).
+  `delivery_bot_bringup/params/sim.yaml` (applied by `stack.launch.py sim:=true`).
 - **The ROS description package is named `delivery_bot`**, not `delivery_bot_description`, because the URDF's mesh
   URIs are `package://delivery_bot/...` and Unity imports the same file.
 - **Grid-step loop:** halt → perceive → update costmap → (re)plan → move exactly `step_size` (0.5 m) → repeat. A
@@ -105,12 +107,16 @@ changes. `SKIP_BUILD=1` skips the build.
 - **ROS-TCP-Connector setup:** ROS 2 mode is the scripting define `ROS2` (Standalone, in `ProjectSettings`). Without
   it, `TimeMsg`/`HeaderMsg` silently use the ROS 1 layout. The connection settings are in
   `Assets/Resources/ROSConnectionPrefab.prefab`.
+- **C# ROS messages:** `Assets/DeliveryBot/RosMessages/` is generated from the pinned `delivery_bot_interfaces`. After a
+  bump that changes them, run `Tools > Delivery Bot > Generate ROS Messages` and commit the result. Don't edit it by hand.
 - **ROS-TCP-Connector pitfalls:**
   - Publishers must skip publishing while `RosBridgeStatus.IsConnected` is false. The connector queues registrations
     behind queued messages, so anything published while disconnected is rejected with `Not registered to publish topic`.
   - Don't use `LastMessageReceivedRealtime` for connection checks: keepalive replies don't update it.
   - The connector logs a lost connection with `Debug.LogError`, so with the Console's Error Pause on, the sim pauses
     when the endpoint stops or is missing at Play. `IsConnected` is stale while paused, because nothing is sent.
+  - `ros2 topic list` shows `/clock` as soon as the stack runs, because `use_sim_time` nodes subscribe to it. Use
+    `ros2 topic echo /clock` to see whether Unity is publishing.
   - A domain reload during Play clears the connection without reconnecting. After editing scripts, wait for the
     compile before entering Play.
 - **Project settings:** physics 50 Hz. The rate is configured only by `Fixed Timestep` (0.02 s) in
