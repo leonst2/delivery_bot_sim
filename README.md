@@ -117,9 +117,9 @@ A status bar shows the ROS connection status and the current grid-step state.
 
 ## Quick start
 
-> The ROS 2 container builds the shared workspace and starts `docker/sim.launch.py`: the TCP endpoint, plus
-> `stack.launch.py sim:=true` as soon as the pinned delivery_bot_core provides `delivery_bot_bringup`
-> (delivery_bot_core#4). Until then it starts the endpoint only. Pressing Play in Unity connects to the endpoint
+> The ROS 2 container builds the shared workspace and starts `docker/sim.launch.py`: the TCP endpoint and
+> `stack.launch.py sim:=true`. The stack's nodes are still stubs that only publish heartbeats, until their
+> delivery_bot_core cards land. `ros2 run delivery_bot_bringup health_check` shows the state of every node. Pressing Play in Unity connects to the endpoint
 > automatically (`Assets/Resources/ROSConnectionPrefab.prefab`) and publishes `/clock`.
 
 ```bash
@@ -134,8 +134,11 @@ ROS_DOMAIN_ID=7 docker compose -f docker/compose.yaml up -d                # oth
 docker compose -f docker/compose.yaml run --rm ros ros2 launch /opt/delivery_bot_sim/sim.launch.py stack:=false   # endpoint only
 ```
 
+The C# types of `delivery_bot_interfaces` are generated into `Assets/DeliveryBot/RosMessages/`. After a submodule bump
+that changes the interfaces, run **Tools > Delivery Bot > Generate ROS Messages** in Unity and commit the result.
+
 Once Unity is in Play mode, `/clock` shows up in the container:
-`docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic list | grep /clock"`.
+`docker compose -f docker/compose.yaml exec ros bash -lc "source /opt/ros/jazzy/setup.bash && ros2 topic echo /clock"`.
 A source change on the host only needs `docker compose -f docker/compose.yaml restart ros`; the entrypoint rebuilds
 the workspace incrementally.
 

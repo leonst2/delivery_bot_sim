@@ -19,13 +19,13 @@ services:
     init: true
     environment:
       ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+      FASTDDS_BUILTIN_TRANSPORTS:  # passed through if set (CI needs UDPv4)
     volumes:
       - ../ros2_ws/src:/ws/src:ro
       - ws_build:/ws/build
       - ws_install:/ws/install
       - ws_log:/ws/log
-    # TCP endpoint for Unity on 0.0.0.0:10000, plus `stack.launch.py sim:=true` once the pinned delivery_bot_core
-    # provides delivery_bot_bringup (delivery_bot_core#4). Append stack:=false for the endpoint alone.
+    # TCP endpoint for Unity on 0.0.0.0:10000 and `stack.launch.py sim:=true`. Append stack:=false for the endpoint alone.
     command: ros2 launch /opt/delivery_bot_sim/sim.launch.py
 
 volumes:
