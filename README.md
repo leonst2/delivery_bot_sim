@@ -111,7 +111,7 @@ A status bar shows the ROS connection status and the current grid-step state.
 | --- | --- |
 | Unity | 6000.3.26f1 (Unity 6.3), URP |
 | URDF Importer | `com.unity.robotics.urdf-importer` v0.5.2 (git) |
-| ROS-TCP-Connector | `com.unity.robotics.ros-tcp-connector` (git, pinned tag) *(planned)* |
+| ROS-TCP-Connector | `com.unity.robotics.ros-tcp-connector` (git, pinned tag `v0.7.1`) |
 | ROS 2 | Jazzy, in Docker: core dev image (`ros:jazzy-ros-core` + C++/Python/Rust) + sim layer with `ros_tcp_endpoint` v0.7.0 |
 | Docker | Docker Desktop. On macOS either enable host networking or use `docker/compose.ports.yaml` |
 
@@ -119,7 +119,8 @@ A status bar shows the ROS connection status and the current grid-step state.
 
 > The ROS 2 container builds the shared workspace and starts `docker/sim.launch.py`: the TCP endpoint, plus
 > `stack.launch.py sim:=true` as soon as the pinned delivery_bot_core provides `delivery_bot_bringup`
-> (delivery_bot_core#4). Until then it starts the endpoint only. The Unity side of the bridge (#4) is still to come.
+> (delivery_bot_core#4). Until then it starts the endpoint only. Pressing Play in Unity connects to the endpoint
+> automatically (`Assets/Resources/ROSConnectionPrefab.prefab`) and publishes `/clock`.
 
 ```bash
 git clone --recurse-submodules https://github.com/leonst2/delivery_bot_sim.git
@@ -176,7 +177,8 @@ Useful checks: `ros2 topic echo /clock`, `ros2 run tf2_ros tf2_echo odom base_li
 ```text
 Assets/
   DeliveryBot/
-    Scripts/      DeliveryBotDrive (Ackermann drive), DeliveryBotKeyboardDrive, SensorPoseRandomizer, LinkCollisionReporter
+    Scripts/      DeliveryBotDrive (Ackermann drive), DeliveryBotKeyboardDrive, SensorPoseRandomizer, LinkCollisionReporter,
+                  RosClockPublisher (/clock), RosBridgeStatus (connection state)
     Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup: URDF import + robot configuration)
     Scenes/       CitySim.unity: main scene, only build scene (camera + light until the city, #14)
                   DriveTest.unity: walled test ground with one robot, for drive and sensor tests
@@ -221,7 +223,7 @@ two steering joints and a matching speed on each of the four driven wheels. `/cm
 | Wheels (4 hub motors) | velocity: damping 10, force limit 10 Nm |
 | Suspension (passive) | spring: 333 Nm/rad front, 210 Nm/rad rear, damping 10 |
 
-Physics runs at 100 Hz (fixed timestep 0.01 s, 12/4 solver iterations). Unity frames: robot forward = +Z,
+Physics runs at 50 Hz (`Fixed Timestep` 0.02 s in `ProjectSettings/TimeManager.asset`, 12/4 solver iterations). Unity frames: robot forward = +Z,
 left = −X, up = +Y. `base_link` origin = ground point under the rear-axle centre. Joint signs follow the URDF:
 positive steering = left turn, positive wheel speed = forward.
 

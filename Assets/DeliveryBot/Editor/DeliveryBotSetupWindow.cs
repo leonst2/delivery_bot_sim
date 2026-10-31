@@ -90,13 +90,12 @@ namespace DeliveryBot.Editor
             if (layer >= 0)
                 Physics.IgnoreLayerCollision(layer, layer, true);
 
-            // 100 Hz physics keeps the articulated suspension and hub-motor drives stable.
-            Time.fixedDeltaTime = 0.01f;
+            // The physics rate is deliberately not set here: ProjectSettings/TimeManager.asset is the only place for it.
             Time.maximumDeltaTime = 0.1f;
             Physics.defaultSolverIterations = 12;
             Physics.defaultSolverVelocityIterations = 4;
             AssetDatabase.SaveAssets();
-            Debug.Log("[DeliveryBot] Project settings applied (tags, Robot layer, fixed timestep 0.01 s).");
+            Debug.Log("[DeliveryBot] Project settings applied (tags, Robot layer, solver iterations).");
         }
 
         static void EnsureTag(string tag)
