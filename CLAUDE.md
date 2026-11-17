@@ -82,8 +82,8 @@ changes. `SKIP_BUILD=1` skips the build.
   folder and imports that copy (git-ignored). Don't move the URDF out of `delivery_bot/urdf/` without checking this.
   `Assets/URDF/Materials`, `Assets/URDF/meshes` and `meshes/*.asset|*.prefab` are importer output that the
   prefabs reference. Never delete them.
-- **Same URDF on both sides:** `delivery_bot_core/delivery_bot/{urdf,meshes}` (used by `robot_state_publisher` for
-  `/tf_static`) must stay byte-identical to `Assets/URDF/delivery_bot/{urdf,meshes/*.stl}`, or the ROS TF tree
+- **Same URDF on both sides:** `delivery_bot_core/delivery_bot/{urdf,meshes}` (read by the stack's own
+  `description_publisher` for `/tf_static`) must stay byte-identical to `Assets/URDF/delivery_bot/{urdf,meshes/*.stl}`, or the ROS TF tree
   won't match the simulated robot. `scripts/check_urdf_sync.sh` enforces this in CI. After a URDF change, update
   both repos.
 - **Latched topics and the CLI:** `/grid_step/state`, `/robot_description` and `/tf_static` are transient-local.
@@ -129,7 +129,7 @@ changes. `SKIP_BUILD=1` skips the build.
 - **Docker image base:** the core dev image is `ros:jazzy-ros-core`, not `ros:jazzy`. The ros-base image ships
   `robot_state_publisher` and `kdl_parser`, which the stack must not use, and `check_forbidden_packages.sh` fails the
   image build if any forbidden package is present. Add dependencies to the core Dockerfile; never run
-  `rosdep install` in the container, because the old core scaffold still declares `robot_state_publisher`.
+  `rosdep install` in the container, because it could pull a forbidden package back in.
 - **Rust in ROS 2:** rclrs comes from crates.io and message types from the `ros-env` crate. Message packages only get
   Rust bindings if they're built with `rosidl_generator_rs` present, which the core image provides in
   `/opt/ros2_rust` (sourced by the entrypoints).

@@ -49,10 +49,10 @@ now only to simulate the world, the robot's physics and its sensors.
 - **Shared navigation code:** the robot description and navigation packages live in
   [delivery_bot_core](https://github.com/leonst2/delivery_bot_core). That repo is included here as a Git submodule
   at `ros2_ws/src/delivery_bot_core`, pinned to a commit. The physical robot
-  ([delivery_bot_os](https://github.com/leonst2/delivery_bot_os)) uses the same repository. Its packages:
-  `delivery_bot` (URDF + meshes, robot_state_publisher), `delivery_bot_navigation` (Nav2 params, `bringup.launch.py`),
-  `delivery_bot_grid_step` and `delivery_bot_perception`. Sim-only differences (`use_sim_time`, topic remaps) go
-  only into `delivery_bot_navigation/config/sim.yaml`, which `bringup.launch.py sim:=true` applies.
+  ([delivery_bot_os](https://github.com/leonst2/delivery_bot_os)) uses the same repository. It has one package per
+  component (`delivery_bot` for the URDF + meshes, `delivery_bot_bringup` for the launch, plus C++, Rust and Python
+  packages for the stack), listed in its README. Sim-only differences (`use_sim_time`, topic remaps) go only into
+  `delivery_bot_bringup/params/sim.yaml`, which `stack.launch.py sim:=true` applies.
 
 ### Grid-step navigation loop
 
