@@ -98,12 +98,16 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
 
 | Region | Content |
 | --- | --- |
-| Top left | Live 2D LiDAR scan, robot-centred polar plot |
-| Bottom left | Minimap of the whole city: robot, goal and dynamic objects. Click to set a goal (`/goal_pose`) |
-| Right half | Live stereo/front camera views |
-| 3D view | Rendered line of the current Nav2 path (`/plan`) |
+| Top left (`LidarSlot`) | LiDAR panel slot |
+| Bottom left (`MinimapSlot`) | Minimap panel slot |
+| Right half (`CameraSlot`) | Camera panel slot |
+| Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
 
-A status bar shows the ROS connection status and the current grid-step state.
+`Assets/DeliveryBot/UI/SimHUD.prefab` provides the Screen Space Overlay canvas and independently replaceable panel slots.
+Its anchored layout scales with the screen at 16:9, 16:10 and 21:9. The panels are translucent overlays, leaving the
+main camera viewport unchanged. The status bar shows ROS connection and grid-step state; safety and stack health
+show placeholders until `/safety/state` and `/health` providers are available.
+See the [HUD layout and panel integration guide](Assets/DeliveryBot/UI/README.md) for panel setup and validation.
 
 ## Requirements
 
