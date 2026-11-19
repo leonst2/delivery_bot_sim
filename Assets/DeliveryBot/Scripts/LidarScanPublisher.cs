@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using RosMessageTypes.BuiltinInterfaces;
 using RosMessageTypes.Sensor;
 using RosMessageTypes.Std;
@@ -93,7 +94,7 @@ public class LidarScanPublisher : MonoBehaviour
         {
             float angle = angleMin + i * angleIncrement;
             Angles[i] = angle;
-            localDirs[i] = new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+            localDirs[i] = new Vector3<FLU>(Mathf.Cos(angle), Mathf.Sin(angle), 0f).toUnity;
         }
         LatestRanges = new float[beamCount];
     }
@@ -136,6 +137,10 @@ public class LidarScanPublisher : MonoBehaviour
         Array.Copy(ranges, LatestRanges, beamCount);
         Timestamp = simTime;
         ScanPublished?.Invoke(LatestRanges, simTime);
+
+        // The connector queues the publisher registration behind already queued messages, so anything published
+        // while disconnected reaches the endpoint first and is rejected with "Not registered to publish topic".
+        if (!RosBridgeStatus.IsConnected) return;
 
         int sec = (int)Math.Floor(simTime);
         uint nanosec = (uint)((simTime - sec) * 1e9);
