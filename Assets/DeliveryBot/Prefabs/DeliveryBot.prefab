@@ -1695,6 +1695,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4120946769429738792}
   - component: {fileID: 7777776736836943603}
+  - component: {fileID: 4796760181829349161}
   m_Layer: 8
   m_Name: LidarSensor
   m_TagString: Untagged
@@ -1731,6 +1732,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
   positionJitter: 0.005
   angleJitter: 1.5
+--- !u!114 &4796760181829349161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753928010292409819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe2b63a52254e24ea9225eb23ab3f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LidarScanPublisher
+  topic: /scan
+  frameId: lidar_link
+  fieldOfViewDeg: 360
+  resolutionDeg: 1
+  rangeMin: 0.1
+  rangeMax: 12
+  rateHz: 10
+  rangeNoiseSigma: 0.01
+  dropoutProbability: 0
+  seed: 0
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  drawDebugRays: 0
 --- !u!1 &1792706795655238606
 GameObject:
   m_ObjectHideFlags: 0
