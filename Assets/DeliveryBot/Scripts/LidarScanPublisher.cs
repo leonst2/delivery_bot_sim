@@ -14,7 +14,8 @@ using RosMessageTypes.Std;
 /// Publishes /scan (sensor_msgs/LaserScan, frame lidar_link, sim time) and exposes the
 /// latest scan to other Unity components (UI panel) via LatestRanges / Angles / Timestamp.
 /// </summary>
-
+namespace DeliveryBot
+{
 public class LidarScanPublisher : MonoBehaviour
 {
     [Header("ROS")]
@@ -172,4 +173,5 @@ public class LidarScanPublisher : MonoBehaviour
         double u2 = rng.NextDouble();
         return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
     }
+}
 }
