@@ -187,6 +187,8 @@ Assets/
     Scripts/      DeliveryBotDrive (Ackermann drive), DeliveryBotKeyboardDrive, SensorPoseRandomizer, LinkCollisionReporter,
                   RosClockPublisher (/clock), RosBridgeStatus (connection state)
     Editor/       DeliveryBotSetupWindow (Tools > Delivery Bot > Setup: URDF import + robot configuration)
+      MapExport/  Tools > City > Export Occupancy Map: static city → map.pgm + map.yaml (+ benchmark tiles)
+    Tests/Editor/ EditMode tests (Window > General > Test Runner), e.g. map frame conversion
     Scenes/       CitySim.unity: main scene, only build scene (camera + light until the city, #14)
                   DriveTest.unity: walled test ground with one robot, for drive and sensor tests
     Prefabs/      DeliveryBot.prefab

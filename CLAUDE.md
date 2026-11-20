@@ -15,8 +15,9 @@ nodes are still stubs that only publish heartbeats, until their core cards land.
 
 ## Commands
 
-There are no tests, no linter and no command-line build. Compile errors show up in the Unity console
-(`Unity_GetConsoleLogs` via MCP).
+There is no linter and no command-line build. Compile errors show up in the Unity console
+(`Unity_GetConsoleLogs` via MCP). EditMode tests live in `Assets/DeliveryBot/Tests/Editor` (Test Runner window);
+code they test needs its own asmdef, because test assemblies can't reference `Assembly-CSharp-Editor`.
 
 ```bash
 git submodule update --init --recursive          # shared code (delivery_bot_core)
@@ -69,6 +70,10 @@ changes. `SKIP_BUILD=1` skips the build.
 - **Command sources must not fight:** `DeliveryBotKeyboardDrive` only calls `SetCommand` while a key is held (plus
   one stop on release). Any new command source (for example the `/cmd_vel` subscriber) should behave the same way, or
   own the drive exclusively.
+- **Static map export** (`Editor/MapExport`, Tools > City > Export Occupancy Map): every enabled, non-trigger
+  collider outside the `Robot`/`Dynamic` layers is static map content. Anything that moves (cyclists, pedestrians)
+  must be on the `Dynamic` layer (9). Obstacle band is 0.08–0.6 m above Unity Y = 0, so the 0.05 m curbs stay
+  drivable. The city root stays at the world origin (map frame origin = Unity world origin).
 - ML-Agents is gone (#3). Don't reintroduce `Unity.MLAgents` types.
 - **Scenes:** `Scenes/CitySim.unity` is the main scene and the only one in Build Settings. It's empty (camera + light)
   until the city (#14) lands; city, UI and dynamic objects go there. `Scenes/DriveTest.unity` is a walled

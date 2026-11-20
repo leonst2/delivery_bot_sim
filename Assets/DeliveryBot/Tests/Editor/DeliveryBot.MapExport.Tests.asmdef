@@ -1,0 +1,26 @@
+{
+    "name": "DeliveryBot.MapExport.Tests",
+    "rootNamespace": "DeliveryBot.MapExport.Tests",
+    "references": [
+        "DeliveryBot.MapExport.Editor",
+        "Unity.Robotics.ROSTCPConnector",
+        "Unity.Robotics.ROSTCPConnector.Messages",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
