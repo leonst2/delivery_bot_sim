@@ -31,7 +31,7 @@ namespace DeliveryBot
             Fx = Fy;
             Cx = 0.5 * (width - 1);
             Cy = 0.5 * (height - 1);
-            Tx = -Fx * baseline;
+            Tx = baseline == 0.0 ? 0.0 : -Fx * baseline; // avoid -0 for the left camera
         }
 
         /// <summary>Pixel of a point given in the camera's own optical frame (metres).</summary>
