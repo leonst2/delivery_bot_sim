@@ -3323,6 +3323,7 @@ GameObject:
   - component: {fileID: 774582680732529530}
   - component: {fileID: 7003725020663584442}
   - component: {fileID: 4987321395754081735}
+  - component: {fileID: 5571697653880976331}
   m_Layer: 8
   m_Name: DeliveryBot
   m_TagString: robot
@@ -3420,6 +3421,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.DeliveryBotKeyboardDrive
   maxSpeed: 2
   maxReverseSpeed: 0.6
+--- !u!114 &5571697653880976331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4397256063833240777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d002e3bb424fa4fddb40feffbaf8a13b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.StereoCameraPublisher
+  width: 640
+  height: 480
+  verticalFovDeg: 50
+  rateHz: 10
+  nearClip: 0.05
+  farClip: 100
+  leftImageTopic: /stereo/left/image_raw
+  rightImageTopic: /stereo/right/image_raw
+  leftInfoTopic: /stereo/left/camera_info
+  rightInfoTopic: /stereo/right/camera_info
+  leftFrameId: stereo_left_camera_optical_frame
+  rightFrameId: stereo_right_camera_optical_frame
+  publishDepthGroundTruth: 0
+  depthTopic: /stereo/left/depth_gt
 --- !u!1 &4548038261564509272
 GameObject:
   m_ObjectHideFlags: 0
