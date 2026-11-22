@@ -82,8 +82,9 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/tf_static` | `tf2_msgs/TFMessage` (sensor frames) | `robot_state_publisher` | |
 | `/odom` | `nav_msgs/Odometry` | Unity → ROS | `odom` → `base_link` |
 | `/scan` | `sensor_msgs/LaserScan` | Unity → ROS | `lidar_link` |
-| `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` | Unity → ROS | `stereo_{left,right}_camera` |
-| `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera` |
+| `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
+| `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
+| `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
 | `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
@@ -239,11 +240,19 @@ positive steering = left turn, positive wheel speed = forward.
 | Sensor | Frame | Simulated as |
 | --- | --- | --- |
 | 2D LiDAR | `lidar_link` | raycast fan, 360°, 1° resolution, 0.1–12 m, 10 Hz → `/scan` *(planned)* |
-| Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) *(planned)* |
+| Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 640×480, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) |
 | Radar left/right, mono cameras | `radar_*_link`, `mono_*_camera` | frames available in the URDF, not simulated yet |
 
 Sensor rays ignore the robot itself (`Robot` layer). Sensors sit on child "mount" objects under the links, because
 the links are ArticulationBodies.
+
+**Stereo cameras** (`StereoCameraPublisher` on the robot root): it adds a Camera to the two `CameraSensor` mounts and
+renders both on demand at the configured rate. Resolution, vertical FOV, rate and the optional ground-truth depth are
+inspector fields. Both images of a pair carry the same sim-time stamp and are published in the optical frames
+(z forward, x right, y down). `camera_info` is exact: zero distortion, `cx = (W-1)/2`, `cy = (H-1)/2`,
+`fy = (H/2)/tan(vfov/2) = fx`, and `P[3] = -fx * baseline` on the right camera. Other Unity components read
+`LeftTexture` / `RightTexture` (and `PairCaptured`) directly. **Tools > Delivery Bot > Check Stereo Cameras** (in Play
+mode) checks the camera poses, the reprojection of known points (≤ 1 px) and the ground-truth depth.
 
 ### Re-import the robot after a URDF change
 

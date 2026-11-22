@@ -59,7 +59,8 @@ changes. `SKIP_BUILD=1` skips the build.
   step is an arc along the path (min turning radius ≈ 1.25 m), not a turn in place. The loop must be
   deterministic: no randomness and fixed tie-breaking.
 - **Frames:** Unity is RUF, ROS is FLU. Convert with ROS-TCP-Connector's `To<FLU>()` / `From<FLU>()`, never by
-  hand. All ROS nodes use `use_sim_time:=true` with the `/clock` that Unity publishes.
+  hand. All ROS nodes use `use_sim_time:=true` with the `/clock` that Unity publishes. Camera images and
+  `camera_info` use the URDF's `*_optical_frame` (z forward, x right, y down), not the body frame of the camera link.
 - **Topic names and types** are fixed by the README table. The issues were written against it so they can be
   worked on in parallel. Change the table and the affected issues together.
 - **`Editor/DeliveryBotSetupWindow.cs` (Tools > Delivery Bot > Setup)** imports the URDF and configures the robot
