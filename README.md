@@ -85,6 +85,7 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
+| `/stereo/disparity` | `sensor_msgs/Image` (32FC1, px; shown in the camera panel) | ROS → Unity | `stereo_left_camera_optical_frame` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
 | `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
@@ -101,7 +102,7 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
 | --- | --- |
 | Top left (`LidarSlot`) | LiDAR panel slot |
 | Bottom left (`MinimapSlot`) | Minimap panel slot |
-| Right half (`CameraSlot`) | Camera panel slot |
+| Right half (`CameraSlot`) | Camera panel: stereo pair, left, right or false-colour disparity (`V` cycles) |
 | Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
 
 `Assets/DeliveryBot/UI/SimHUD.prefab` provides the Screen Space Overlay canvas and independently replaceable panel slots.
