@@ -82,6 +82,7 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/tf_static` | `tf2_msgs/TFMessage` (sensor frames) | `robot_state_publisher` | |
 | `/odom` | `nav_msgs/Odometry` | Unity → ROS | `odom` → `base_link` |
 | `/scan` | `sensor_msgs/LaserScan` | Unity → ROS | `lidar_link` |
+| `/scan/filtered` | `sensor_msgs/LaserScan` (from the scan filter; shown in the LiDAR panel) | ROS → Unity | `lidar_link` |
 | `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
@@ -91,7 +92,9 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
 | `/grid_step/state` | `std_msgs/String` | ROS → Unity | |
-| `/tracked_obstacles` | `visualization_msgs/MarkerArray` | ROS → Unity | `map` |
+| `/tracked_obstacles` | `delivery_bot_interfaces/TrackedObstacleArray` (shown in the LiDAR panel) | ROS → Unity | `map` |
+| `/safety/state` | `std_msgs/String` (latched) | ROS → Unity | |
+| `/safety/stop_zone` | `geometry_msgs/PolygonStamped` (latched, current stop zone; shown in the LiDAR panel) | ROS → Unity | `base_link` |
 
 `/cmd_vel` is `geometry_msgs/Twist`, Nav2's default on Jazzy. Switch both sides to `TwistStamped` if
 `enable_stamped_cmd_vel` is turned on. Unity uses RUF coordinates (right, up, forward) and ROS uses FLU (forward,
@@ -101,7 +104,7 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
 
 | Region | Content |
 | --- | --- |
-| Top left (`LidarSlot`) | LiDAR panel slot |
+| Top left (`LidarSlot`) | LiDAR panel: polar scan plot (raw, filtered or mock; `L` cycles) with tracked obstacles and the stop zone |
 | Bottom left (`MinimapSlot`) | Minimap panel slot |
 | Right half (`CameraSlot`) | Camera panel: stereo pair, left, right or false-colour disparity (`V` cycles) |
 | Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
