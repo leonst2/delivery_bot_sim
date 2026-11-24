@@ -1,6 +1,7 @@
 using System;
 using RosMessageTypes.Sensor;
 using Unity.Robotics.ROSTCPConnector;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -19,7 +20,8 @@ namespace DeliveryBot
     /// Without a <see cref="StereoCameraPublisher"/> in the scene, a stand-in scene camera (default Camera.main) is
     /// rendered instead, so the panel can be laid out and tested before the robot exists. Without registered
     /// <see cref="SideCameraFeeds"/>, stand-in cameras are rendered on the robot's mono camera mounts (or, without a
-    /// robot, yawed outwards from the stand-in scene camera).
+    /// robot, yawed outwards from the stand-in scene camera). Side detections from /perception/side_points are
+    /// projected into the side feeds as markers.
     /// Built by Tools > Delivery Bot > Build Camera Panel.
     /// </summary>
     public class CameraPanel : MonoBehaviour
@@ -35,6 +37,8 @@ namespace DeliveryBot
             public AspectRatioFitter fitter;
             public Text title;
             public Text caption;
+            [Tooltip("Pooled detection markers, children of a container stretched over the image (side feeds only).")]
+            public RectTransform[] markers = Array.Empty<RectTransform>();
 
             public bool Visible => root != null && root.activeSelf;
 
@@ -88,6 +92,7 @@ namespace DeliveryBot
             public Transform standInParent;
             public bool standInOnRobot;
             public RenderTexture standInTexture;
+            public int markersShown;
             readonly Action<double> m_OnCaptured;
 
             public SideSource(CameraSide side)
@@ -111,6 +116,9 @@ namespace DeliveryBot
         }
 
         const string k_DisparityTopic = "/stereo/disparity";
+        const string k_SidePointsTopic = "/perception/side_points";
+        const string k_SidePointsFrame = "base_link";
+        const int k_MaxDetections = 64;
         const string k_SideMount = "CameraSensor";
         const float k_SearchInterval = 1f; // s between searches for the stereo cameras and the robot
         static readonly Rect k_Upright = new Rect(0f, 0f, 1f, 1f);
@@ -125,12 +133,17 @@ namespace DeliveryBot
         public FeedView disparity = new FeedView();
         public FeedView sideLeft = new FeedView();
         public FeedView sideRight = new FeedView();
-        public Button stereoButton, leftButton, rightButton, disparityButton, sideButton;
+        public Button stereoButton, leftButton, rightButton, disparityButton, sideButton, detectionsButton;
         public Text statusText;
 
         [Header("Disparity")]
         [Tooltip("Disparity (px) shown at the top of the colour map. Values <= 0, NaN and Inf are drawn black.")]
         public float maxDisparity = 96f;
+
+        [Header("Side detections (/perception/side_points)")]
+        public bool showSideDetections = true;
+        [Tooltip("Markers disappear when no message arrived for this long (s, real time).")]
+        public float detectionTimeout = 1f;
 
         [Header("Stand-in until the stereo and side cameras exist")]
         [Tooltip("Defaults to Camera.main.")]
@@ -159,6 +172,11 @@ namespace DeliveryBot
         bool m_HasDisparity;
         double m_DisparityStamp;
 
+        readonly Vector3[] m_Detections = new Vector3[k_MaxDetections]; // base_link, Unity axes (RUF)
+        int m_DetectionCount;
+        float m_DetectionTime = float.NegativeInfinity; // Time.unscaledTime of the last message
+        bool m_WarnedSidePoints;
+
         RateEstimator m_PairRate; // from PairCaptured (sim time)
         int m_ShownView = -1;
 
@@ -182,11 +200,19 @@ namespace DeliveryBot
             if (rightButton != null) rightButton.onClick.AddListener(() => view = View.Right);
             if (disparityButton != null) disparityButton.onClick.AddListener(() => view = View.Disparity);
             if (sideButton != null) sideButton.onClick.AddListener(() => view = View.Side);
+            if (detectionsButton != null)
+                detectionsButton.onClick.AddListener(() =>
+                {
+                    showSideDetections = !showSideDetections;
+                    m_ShownView = -1; // refresh the button highlight
+                });
         }
 
         void Start()
         {
-            ROSConnection.GetOrCreateInstance().Subscribe<ImageMsg>(k_DisparityTopic, OnDisparity);
+            var ros = ROSConnection.GetOrCreateInstance();
+            ros.Subscribe<ImageMsg>(k_DisparityTopic, OnDisparity);
+            ros.Subscribe<PointCloud2Msg>(k_SidePointsTopic, OnSidePoints);
         }
 
         void OnDisable()
@@ -368,6 +394,49 @@ namespace DeliveryBot
             m_DisparityStamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9;
         }
 
+        void OnSidePoints(PointCloud2Msg msg)
+        {
+            int ox = -1, oy = -1, oz = -1;
+            foreach (var field in msg.fields)
+            {
+                if (field.datatype != PointFieldMsg.FLOAT32) continue;
+                if (field.name == "x") ox = (int)field.offset;
+                else if (field.name == "y") oy = (int)field.offset;
+                else if (field.name == "z") oz = (int)field.offset;
+            }
+            int width = (int)msg.width, height = (int)msg.height;
+            int pointStep = (int)msg.point_step, rowStep = (int)msg.row_step;
+            string frame = msg.header.frame_id;
+            bool valid = ox >= 0 && oy >= 0 && oz >= 0 && !msg.is_bigendian && BitConverter.IsLittleEndian
+                && Mathf.Max(ox, oy, oz) + 4 <= pointStep && rowStep >= width * pointStep
+                && msg.data.Length >= rowStep * height
+                && (string.IsNullOrEmpty(frame) || frame == k_SidePointsFrame);
+            if (!valid)
+            {
+                if (!m_WarnedSidePoints)
+                    Debug.LogWarning($"[CameraPanel] Ignoring {k_SidePointsTopic}: expected little-endian float32 x/y/z in "
+                                     + $"{k_SidePointsFrame}, got frame '{frame}' with {msg.fields.Length} fields.");
+                m_WarnedSidePoints = true;
+                return;
+            }
+
+            int count = 0;
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width && count < k_MaxDetections; col++)
+                {
+                    int i = row * rowStep + col * pointStep;
+                    float x = BitConverter.ToSingle(msg.data, i + ox);
+                    float y = BitConverter.ToSingle(msg.data, i + oy);
+                    float z = BitConverter.ToSingle(msg.data, i + oz);
+                    if (!float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(z)) continue;
+                    m_Detections[count++] = new Vector3<FLU>(x, y, z).toUnity;
+                }
+            }
+            m_DetectionCount = count;
+            m_DetectionTime = Time.unscaledTime;
+        }
+
         // ---------------------------------------------------------------- display
 
         void UpdateFeeds()
@@ -395,6 +464,8 @@ namespace DeliveryBot
                 {
                     sideLeft.SetTexture(m_Sides[0].Texture, k_Upright);
                     sideRight.SetTexture(m_Sides[1].Texture, k_Upright);
+                    UpdateMarkers(sideLeft, m_Sides[0]);
+                    UpdateMarkers(sideRight, m_Sides[1]);
                 }
             }
 
@@ -402,6 +473,38 @@ namespace DeliveryBot
             if (m_ShownView == (int)view && Time.frameCount % 30 != 0) return;
             m_ShownView = (int)view;
             UpdateTexts(stereo, leftTexture);
+        }
+
+        bool DetectionsFresh => Time.unscaledTime - m_DetectionTime <= detectionTimeout;
+
+        /// <summary>
+        /// Projects the latest side detections (base_link) through the camera that rendered the feed, so the markers
+        /// match the picture for real side cameras and stand-ins alike.
+        /// </summary>
+        void UpdateMarkers(FeedView feedView, SideSource source)
+        {
+            var markers = feedView.markers;
+            int shown = 0;
+            var robot = FindRobot();
+            var cam = source.Camera;
+            if (showSideDetections && DetectionsFresh && markers.Length > 0 && cam != null && robot != null
+                && robot.Root != null && feedView.image.enabled)
+            {
+                Transform baseLink = robot.Root.transform;
+                Vector2 size = feedView.image.rectTransform.rect.size;
+                for (int i = 0; i < m_DetectionCount && shown < markers.Length; i++)
+                {
+                    Vector3 viewport = cam.WorldToViewportPoint(baseLink.TransformPoint(m_Detections[i]));
+                    if (viewport.z <= 0f || viewport.x < 0f || viewport.x > 1f || viewport.y < 0f || viewport.y > 1f)
+                        continue;
+                    var marker = markers[shown++];
+                    marker.anchoredPosition = new Vector2(viewport.x * size.x, viewport.y * size.y);
+                    if (!marker.gameObject.activeSelf) marker.gameObject.SetActive(true);
+                }
+            }
+            for (int i = shown; i < markers.Length; i++)
+                if (markers[i].gameObject.activeSelf) markers[i].gameObject.SetActive(false);
+            source.markersShown = shown;
         }
 
         void UpdateTexts(bool stereo, Texture leftTexture)
@@ -445,22 +548,32 @@ namespace DeliveryBot
             HighlightButton(rightButton, view == View.Right);
             HighlightButton(disparityButton, view == View.Disparity);
             HighlightButton(sideButton, view == View.Side);
+            HighlightButton(detectionsButton, showSideDetections);
         }
 
         void UpdateSideTexts(FeedView feedView, SideSource source, string title)
         {
+            string detections = DetectionCaption(source);
             if (source.HasFeed)
             {
                 SetText(feedView.title, title);
-                SetText(feedView.caption, Caption(source.feed.Texture, source.rate.Hz));
+                SetText(feedView.caption, Caption(source.feed.Texture, source.rate.Hz) + detections);
             }
             else
             {
                 SetText(feedView.title, $"Stand-in: {title}");
                 SetText(feedView.caption, source.standIn == null ? "no camera"
-                    : source.standInOnRobot ? "side cameras not found (#40) · on the robot's mount"
-                    : "side cameras not found (#40)");
+                    : (source.standInOnRobot ? "on the robot's mount" : "yawed scene camera") + detections);
             }
+        }
+
+        string DetectionCaption(SideSource source)
+        {
+            if (!showSideDetections) return "";
+            if (float.IsNegativeInfinity(m_DetectionTime)) return " · waiting for side_points";
+            if (!DetectionsFresh) return " · side_points stale";
+            if (FindRobot() == null) return " · no robot for side_points";
+            return source.markersShown == 1 ? " · 1 detection" : $" · {source.markersShown} detections";
         }
 
         static string Caption(Texture texture, double rateHz)
