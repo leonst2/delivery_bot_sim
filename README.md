@@ -86,6 +86,7 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
 | `/stereo/disparity` | `sensor_msgs/Image` (32FC1, px; shown in the camera panel) | ROS → Unity | `stereo_left_camera_optical_frame` |
+| `/perception/side_points` | `sensor_msgs/PointCloud2` (x/y/z, one ground point per side detection; shown in the camera panel) | ROS → Unity | `base_link` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
 | `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
