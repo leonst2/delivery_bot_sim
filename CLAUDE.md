@@ -41,7 +41,9 @@ docker compose -f docker/compose.yaml down       # named volumes keep the worksp
 check) is `delivery_bot_core/docker/Dockerfile` in the submodule. Change toolchains there, in delivery_bot_core.
 `docker/Dockerfile` in this repo is only the simulation layer `FROM` that image: ROS-TCP-Endpoint + an entrypoint
 that rebuilds `ros2_ws/src` (mounted read-only) incrementally on every start, so a restart picks up submodule
-changes. `SKIP_BUILD=1` skips the build.
+changes. `SKIP_BUILD=1` skips the build. `docker/patches/` holds patches applied to the pinned ROS-TCP-Endpoint at image
+build time. `ros_tcp_endpoint-reregister.patch` stops the endpoint from crashing (`InvalidHandle`, then "Connection
+refused" in Unity) when Unity reconnects and registers its topics again. Rebuild the image after changing a patch.
 
 ## Architecture rules
 

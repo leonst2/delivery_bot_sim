@@ -16,9 +16,11 @@ jobs:
       # The build fails if a forbidden package (Nav2, robot_state_publisher, ...) ends up in the image.
       - name: Build image
         run: docker compose -f docker/compose.yaml build
+      # Through compose, so the workspace build lands in the named volumes and the next step only rebuilds
+      # incrementally instead of starting from scratch.
       - name: Build and test delivery_bot_core in the image
         run: |
-          docker run --rm -v "$PWD/ros2_ws/src:/ws/src:ro" delivery_bot_sim_ros:jazzy \
+          docker compose -f docker/compose.yaml run --rm ros \
             bash -c "cd /ws && colcon test --event-handlers console_cohesion+ && colcon test-result --verbose"
       # sim.launch.py: the endpoint and the stack.
       - name: Endpoint and stack start
@@ -27,9 +29,17 @@ jobs:
           FASTDDS_BUILTIN_TRANSPORTS: UDPv4
         run: |
           docker compose -f docker/compose.yaml -f docker/compose.ports.yaml up -d
-          for i in $(seq 1 60); do docker compose -f docker/compose.yaml logs ros | grep -q "Starting server" && break; sleep 1; done
+          # The entrypoint builds the workspace before launching. Wait for the endpoint itself: with published ports
+          # Docker's proxy accepts TCP connections even while nothing listens inside, so nc alone proves nothing.
+          started=false
+          for i in $(seq 1 600); do
+            if docker compose -f docker/compose.yaml logs ros | grep -q "Starting server"; then started=true; break; fi
+            if [ -z "$(docker compose -f docker/compose.yaml ps -q --status running ros)" ]; then break; fi
+            sleep 1
+          done
           sleep 5
           docker compose -f docker/compose.yaml logs ros | tail -40
+          if [ "$started" != true ]; then echo "::error::The endpoint did not start"; exit 1; fi
           nc -z 127.0.0.1 10000
           docker compose -f docker/compose.yaml exec -T ros bash -c \
             "source /ws/install/setup.bash && ros2 run delivery_bot_bringup health_check --timeout 30"
