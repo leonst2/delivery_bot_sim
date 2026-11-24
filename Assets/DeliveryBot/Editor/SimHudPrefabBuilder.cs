@@ -29,8 +29,9 @@ namespace DeliveryBot.Editor
             try
             {
                 ConfigureCanvas(root);
-                CreatePanelSlot(root.transform, "LidarSlot", "LiDAR panel slot",
+                var lidarSlot = CreatePanelSlot(root.transform, "LidarSlot", "LiDAR panel slot",
                     new Vector2(0.02f, 0.56f), new Vector2(0.27f, 0.96f));
+                NestPanel(lidarSlot, LidarPanelPrefabBuilder.PrefabPath);
                 CreatePanelSlot(root.transform, "MinimapSlot", "Minimap panel slot",
                     new Vector2(0.02f, 0.10f), new Vector2(0.27f, 0.50f));
                 var cameraSlot = CreatePanelSlot(root.transform, "CameraSlot", "Camera panel slot",
