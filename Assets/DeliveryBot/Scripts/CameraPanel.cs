@@ -3,9 +3,7 @@ using RosMessageTypes.Sensor;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
@@ -54,31 +52,6 @@ namespace DeliveryBot
                 image.enabled = texture != null;
                 if (texture != null && texture.height > 0)
                     fitter.aspectRatio = (float)texture.width / texture.height;
-            }
-        }
-
-        /// <summary>Capture rate from consecutive sim-time stamps, smoothed.</summary>
-        struct RateEstimator
-        {
-            double m_Last;
-            bool m_HasLast;
-            public double Hz;
-
-            public void Reset()
-            {
-                m_HasLast = false;
-                Hz = 0;
-            }
-
-            public void Add(double stamp)
-            {
-                if (m_HasLast && stamp > m_Last)
-                {
-                    double rate = 1.0 / (stamp - m_Last);
-                    Hz = Hz <= 0 ? rate : 0.8 * Hz + 0.2 * rate;
-                }
-                m_Last = stamp;
-                m_HasLast = true;
             }
         }
 
@@ -182,8 +155,8 @@ namespace DeliveryBot
 
         void Awake()
         {
-            HideSlotPlaceholder();
-            EnsureEventSystem();
+            HudPanelUtil.HideSlotPlaceholder(transform);
+            HudPanelUtil.EnsureEventSystem();
             var shader = Resources.Load<Shader>("DeliveryBot/DisparityColormap");
             if (shader != null)
             {
@@ -513,18 +486,18 @@ namespace DeliveryBot
             if (stereo)
             {
                 string caption = Caption(leftTexture, m_PairRate.Hz);
-                SetText(left.title, stereoLeftTitle);
-                SetText(right.title, "Right");
-                SetText(left.caption, caption);
-                SetText(right.caption, caption);
+                HudPanelUtil.SetText(left.title, stereoLeftTitle);
+                HudPanelUtil.SetText(right.title, "Right");
+                HudPanelUtil.SetText(left.caption, caption);
+                HudPanelUtil.SetText(right.caption, caption);
             }
             else
             {
                 var cam = StandInCamera;
-                SetText(left.title, cam != null ? $"Stand-in: {cam.name}" : "No camera");
-                SetText(left.caption, "stereo cameras not found");
-                SetText(right.title, "Right");
-                SetText(right.caption, "no stereo camera");
+                HudPanelUtil.SetText(left.title, cam != null ? $"Stand-in: {cam.name}" : "No camera");
+                HudPanelUtil.SetText(left.caption, "stereo cameras not found");
+                HudPanelUtil.SetText(right.title, "Right");
+                HudPanelUtil.SetText(right.caption, "no stereo camera");
             }
 
             UpdateSideTexts(sideLeft, m_Sides[0], "Left side");
@@ -532,23 +505,23 @@ namespace DeliveryBot
 
             bool sidesMissing = !m_Sides[0].HasFeed || !m_Sides[1].HasFeed;
             if (!stereo && view != View.Disparity)
-                SetText(statusText, "Stand-in view until the robot's stereo cameras exist");
+                HudPanelUtil.SetText(statusText, "Stand-in view until the robot's stereo cameras exist");
             else if (sidesMissing && view == View.Side)
-                SetText(statusText, "Side stand-ins until the side cameras exist (#40)");
+                HudPanelUtil.SetText(statusText, "Side stand-ins until the side cameras exist (#40)");
             else
-                SetText(statusText, "");
+                HudPanelUtil.SetText(statusText, "");
 
-            SetText(disparity.title, "Disparity");
-            SetText(disparity.caption, m_HasDisparity
+            HudPanelUtil.SetText(disparity.title, "Disparity");
+            HudPanelUtil.SetText(disparity.caption, m_HasDisparity
                 ? $"{m_DisparityTexture.width}×{m_DisparityTexture.height} · 0–{maxDisparity:F0} px · t = {m_DisparityStamp:F1} s"
                 : $"waiting for {k_DisparityTopic} (delivery_bot_core#10)");
 
-            HighlightButton(stereoButton, view == View.Stereo);
-            HighlightButton(leftButton, view == View.Left);
-            HighlightButton(rightButton, view == View.Right);
-            HighlightButton(disparityButton, view == View.Disparity);
-            HighlightButton(sideButton, view == View.Side);
-            HighlightButton(detectionsButton, showSideDetections);
+            HudPanelUtil.HighlightButton(stereoButton, view == View.Stereo);
+            HudPanelUtil.HighlightButton(leftButton, view == View.Left);
+            HudPanelUtil.HighlightButton(rightButton, view == View.Right);
+            HudPanelUtil.HighlightButton(disparityButton, view == View.Disparity);
+            HudPanelUtil.HighlightButton(sideButton, view == View.Side);
+            HudPanelUtil.HighlightButton(detectionsButton, showSideDetections);
         }
 
         void UpdateSideTexts(FeedView feedView, SideSource source, string title)
@@ -556,13 +529,13 @@ namespace DeliveryBot
             string detections = DetectionCaption(source);
             if (source.HasFeed)
             {
-                SetText(feedView.title, title);
-                SetText(feedView.caption, Caption(source.feed.Texture, source.rate.Hz) + detections);
+                HudPanelUtil.SetText(feedView.title, title);
+                HudPanelUtil.SetText(feedView.caption, Caption(source.feed.Texture, source.rate.Hz) + detections);
             }
             else
             {
-                SetText(feedView.title, $"Stand-in: {title}");
-                SetText(feedView.caption, source.standIn == null ? "no camera"
+                HudPanelUtil.SetText(feedView.title, $"Stand-in: {title}");
+                HudPanelUtil.SetText(feedView.caption, source.standIn == null ? "no camera"
                     : (source.standInOnRobot ? "on the robot's mount" : "yawed scene camera") + detections);
             }
         }
@@ -581,35 +554,6 @@ namespace DeliveryBot
             if (texture == null) return "";
             string rate = rateHz > 0 ? $" · {rateHz:F1} Hz" : "";
             return $"{texture.width}×{texture.height}{rate}";
-        }
-
-        static void SetText(Text text, string value)
-        {
-            if (text != null && text.text != value) text.text = value;
-        }
-
-        static void HighlightButton(Button button, bool active)
-        {
-            if (button == null) return;
-            var image = button.targetGraphic as Image;
-            if (image != null)
-                image.color = active ? new Color(0.25f, 0.55f, 0.95f, 0.95f) : new Color(1f, 1f, 1f, 0.15f);
-        }
-
-        // ---------------------------------------------------------------- setup helpers
-
-        void HideSlotPlaceholder()
-        {
-            var placeholder = transform.parent != null ? transform.parent.Find("SlotPlaceholder") : null;
-            if (placeholder != null) placeholder.gameObject.SetActive(false);
-        }
-
-        static void EnsureEventSystem()
-        {
-            // The HUD's buttons need an EventSystem; CitySim doesn't have one of its own.
-            if (EventSystem.current != null || FindFirstObjectByType<EventSystem>() != null) return;
-            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            DontDestroyOnLoad(go);
         }
     }
 }
