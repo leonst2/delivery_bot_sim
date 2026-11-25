@@ -1,22 +1,25 @@
 {
   "name": "cyclist_overtaking",
-  "description": "A cyclist overtakes from behind, going south down the south street.",
+  "description": "A faster cyclist comes from the north street and overtakes the robot from behind in its lane (southbound, map y 2.0).",
   "staticObstacles": [],
   "cyclists": [
     {
       "name": "cyclist_0",
       "route": [
         {
-          "x": 10.0,
-          "y": -1.0
+          "x": 15.0,
+          "y": 2.0
         },
         {
           "x": -45.0,
-          "y": -1.0
+          "y": 2.0
         }
       ],
       "speed": 6.0,
-      "startDelay": 2.0
+      "startDelay": 2.0,
+      "loop": false,
+      "speedJitter": 0.0,
+      "startDelayJitter": 0.0
     }
   ]
 }
