@@ -72,7 +72,7 @@ namespace DeliveryBot
         RenderTexture m_DepthBuffer;
         Material m_LinearDepth;
 
-        double m_NextCaptureTime;
+        SensorCaptureClock m_Clock;
         bool m_CaptureDue;
         double m_DueStamp;
 
@@ -129,7 +129,6 @@ namespace DeliveryBot
             m_Right.Register(m_Ros, rightImageTopic, rightInfoTopic);
             if (publishDepthGroundTruth)
                 m_DepthPool = SimCameraChannel.RegisterImagePublisher(m_Ros, depthTopic);
-            m_NextCaptureTime = Time.fixedTimeAsDouble;
         }
 
         void OnValidate()
@@ -181,10 +180,9 @@ namespace DeliveryBot
 
         void FixedUpdate()
         {
+            // On the shared sim-time grid, so the side cameras at the same rate get the same stamps.
             double now = Time.fixedTimeAsDouble;
-            if (now < m_NextCaptureTime) return;
-            m_NextCaptureTime += 1.0 / rateHz;
-            if (m_NextCaptureTime < now) m_NextCaptureTime = now + 1.0 / rateHz; // don't catch up after a hitch
+            if (!m_Clock.IsDue(now, rateHz)) return;
             m_CaptureDue = true;
             m_DueStamp = now;
         }
