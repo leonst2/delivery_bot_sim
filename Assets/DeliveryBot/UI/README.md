@@ -65,11 +65,11 @@ to the builder the same way, or integrated manually as nested prefab instances u
   10 Hz and says so in its title and status.
 - Cost: no per-frame allocations or per-pixel CPU work. Measured frame time with and without the panel is the same
   within noise (about 3.6 ms per frame; 3.3 ms in the Side view with stand-ins vs 3.7 ms with the panel off).
-- **Side cameras:** the panel shows the feeds registered in `SideCameraFeeds` (`Scripts/SideCameraFeeds.cs`). The side
-  camera component (#40) implements `ISideCameraFeed` (side, `RenderTexture`, Unity `Camera`, `Captured` with the
-  sim-time stamp) and calls `SideCameraFeeds.Register` / `Unregister` in `OnEnable` / `OnDisable`. The panel needs no
-  other changes for this.
-- **Side stand-ins:** without registered feeds, and only while the Side view is shown, the panel renders its own
+- **Side cameras:** the panel shows the feeds registered in `SideCameraFeeds` (`Scripts/SideCameraFeeds.cs`).
+  `SideCameraPublisher` on the robot registers both side cameras (`ISideCameraFeed`: side, `RenderTexture`, Unity
+  `Camera`, `Captured` with the sim-time stamp) in `OnEnable` and unregisters them in `OnDisable`.
+- **Side stand-ins:** only a fallback for scenes without a `SideCameraPublisher`. Without registered feeds, and only
+  while the Side view is shown, the panel renders its own
   640×360 stand-in cameras (horizontal FOV 1.2 rad) at 10 Hz. They sit on the robot's `mono_{left,right}_camera`
   mounts, or yawed ±21.7° from the stand-in scene camera when there's no robot. The titles say "Stand-in", and the
   status line says the side cameras are missing.

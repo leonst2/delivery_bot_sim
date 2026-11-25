@@ -23,7 +23,7 @@ now only to simulate the world, the robot's physics and its sensors.
 │  City scene: static objects (buildings, parked cars) + dynamic objects    │
 │  (cyclists)                                                               │
 │  delivery_bot (URDF → ArticulationBodies)                                 │
-│    sensors:   2D LiDAR → /scan, stereo cameras → /stereo/*                │
+│    sensors:   2D LiDAR → /scan, stereo → /stereo/*, side cams → /mono/*   │
 │    state:     /odom, /tf (odom→base_link), /clock                         │
 │    actuation: /cmd_vel → DeliveryBotDrive (Ackermann)                     │
 │  UI: minimap, LiDAR view, camera views, Nav2 path overlay                 │
@@ -86,6 +86,8 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
+| `/mono/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8; side cameras, same stamps as the stereo pair) | Unity → ROS | `mono_{left,right}_camera_optical_frame` |
+| `/mono/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `mono_{left,right}_camera_optical_frame` |
 | `/stereo/disparity` | `sensor_msgs/Image` (32FC1, px; shown in the camera panel) | ROS → Unity | `stereo_left_camera_optical_frame` |
 | `/perception/side_points` | `sensor_msgs/PointCloud2` (x/y/z, one ground point per side detection; shown in the camera panel) | ROS → Unity | `base_link` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
@@ -246,7 +248,8 @@ positive steering = left turn, positive wheel speed = forward.
 | --- | --- | --- |
 | 2D LiDAR | `lidar_link` | raycast fan, 360°, 1° resolution, 0.1–12 m, 10 Hz → `/scan` *(planned)* |
 | Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 640×480, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) |
-| Radar left/right, mono cameras | `radar_*_link`, `mono_*_camera` | frames available in the URDF, not simulated yet |
+| Side cameras | `mono_left_camera`, `mono_right_camera` (±21.7° outward) | Unity cameras, 640×360, 10 Hz → `/mono/*` (horizontal FOV is a 1.2 rad placeholder) |
+| Radar left/right | `radar_*_link` | frames available in the URDF, not simulated yet |
 
 Sensor rays ignore the robot itself (`Robot` layer). Sensors sit on child "mount" objects under the links, because
 the links are ArticulationBodies.
@@ -256,8 +259,17 @@ renders both on demand at the configured rate. Resolution, vertical FOV, rate an
 inspector fields. Both images of a pair carry the same sim-time stamp and are published in the optical frames
 (z forward, x right, y down). `camera_info` is exact: zero distortion, `cx = (W-1)/2`, `cy = (H-1)/2`,
 `fy = (H/2)/tan(vfov/2) = fx`, and `P[3] = -fx * baseline` on the right camera. Other Unity components read
-`LeftTexture` / `RightTexture` (and `PairCaptured`) directly. **Tools > Delivery Bot > Check Stereo Cameras** (in Play
-mode) checks the camera poses, the reprojection of known points (≤ 1 px) and the ground-truth depth.
+`LeftTexture` / `RightTexture` (and `PairCaptured`) directly.
+
+**Side cameras** (`SideCameraPublisher` on the robot root): the same render / readback / publish path
+(`SimCameraChannel`) on the `CameraSensor` mounts under `mono_{left,right}_camera`. Resolution, horizontal FOV and rate
+are inspector fields. `camera_info` has zero distortion and no `Tx` (monocular). Both feeds are registered in
+`SideCameraFeeds` for the camera panel.
+
+All cameras capture on the sim-time grid `k / rate` (`SensorCaptureClock`), so at equal rates the side images carry the
+same stamp as the stereo pair of the same capture. **Tools > Delivery Bot > Check Cameras** (in Play mode) checks all of
+them: poses against the URDF, `camera_info`, the reprojection of known points (≤ 1 px), the optional ground-truth depth
+and the shared stamps.
 
 ### Re-import the robot after a URDF change
 
