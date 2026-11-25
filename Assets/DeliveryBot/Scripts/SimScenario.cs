@@ -47,6 +47,12 @@ namespace DeliveryBot
             public float speed = 4f;
             [Tooltip("Sim seconds after the scenario is loaded before the cyclist starts.")]
             public float startDelay;
+            [Tooltip("Start again from the first waypoint at the end of the route instead of leaving.")]
+            public bool loop;
+            [Tooltip("Uniform random offset of the speed in [-speedJitter, +speedJitter] (m/s), drawn from the seed.")]
+            public float speedJitter;
+            [Tooltip("Uniform random offset of the start delay in [-startDelayJitter, +startDelayJitter] (s), from the seed.")]
+            public float startDelayJitter;
         }
 
         [Serializable]
