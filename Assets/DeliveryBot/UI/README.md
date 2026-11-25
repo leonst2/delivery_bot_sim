@@ -113,7 +113,7 @@ Panels display simulation or ROS data; they must not implement perception, mappi
 | LiDAR | Visualize the scans, the tracked obstacles and the stop zone the stack publishes. Do not filter, detect obstacles, compute safety zones or plan paths in the panel. |
 | Minimap | Render the Unity city and robot from above; show goal and dynamic-object markers from their existing data sources. |
 | Camera | Display the stereo and side cameras' `RenderTexture`s, the disparity and the side detections from ROS. Don't compute disparity or detect objects in the panel. |
-| Planned path | Keep the `/plan` visualization in the 3D view, outside the panel slots. The HUD shell does not implement it. |
+| Planned path | `PlanPathOverlay` (in CitySim, not in the HUD) draws `/plan` and the current step in the 3D view, outside the panel slots. Display only; it doesn't plan. |
 
 `CameraSlot` itself is only the area; the camera panel inside it shows the feeds. It is not a Unity `Camera`.
 
