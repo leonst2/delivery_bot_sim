@@ -91,9 +91,9 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/stereo/disparity` | `sensor_msgs/Image` (32FC1, px; shown in the camera panel) | ROS → Unity | `stereo_left_camera_optical_frame` |
 | `/perception/side_points` | `sensor_msgs/PointCloud2` (x/y/z, one ground point per side detection; shown in the camera panel) | ROS → Unity | `base_link` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
-| `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
+| `/plan` | `nav_msgs/Path` (shown as the 3D path overlay) | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
-| `/grid_step/state` | `std_msgs/String` | ROS → Unity | |
+| `/grid_step/state` | `delivery_bot_interfaces/GridStepState` (transient-local; status bar, clears the path overlay on DONE/FAILED) | ROS → Unity | |
 | `/tracked_obstacles` | `delivery_bot_interfaces/TrackedObstacleArray` (shown in the LiDAR panel) | ROS → Unity | `map` |
 | `/safety/state` | `std_msgs/String` (latched) | ROS → Unity | |
 | `/safety/stop_zone` | `geometry_msgs/PolygonStamped` (latched, current stop zone; shown in the LiDAR panel) | ROS → Unity | `base_link` |
@@ -116,6 +116,12 @@ Its anchored layout scales with the screen at 16:9, 16:10 and 21:9. The panels a
 main camera viewport unchanged. The status bar shows ROS connection and grid-step state; safety and stack health
 show placeholders until `/safety/state` and `/health` providers are available.
 See the [HUD layout and panel integration guide](Assets/DeliveryBot/UI/README.md) for panel setup and validation.
+
+**Planned-path overlay** (`PlanPathOverlay` in CitySim): draws `/plan` as a flat line 5 cm above the ground in the 3D
+view. The plan is cyan, the current step (the next `step_size`, 0.5 m, from the robot's `base_link`) orange, and
+reverse segments are dashed. Parts covered by the robot or buildings show faintly through them. A new `/plan` replaces
+the line; `/grid_step/state` DONE or FAILED clears it. **P** toggles a test path in front of the robot (straight, a
+1.5 m-radius left arc, then reverse) to check the overlay without ROS.
 
 ## Requirements
 
