@@ -482,12 +482,11 @@ namespace DeliveryBot
 
         void UpdateTexts(bool stereo, Texture leftTexture)
         {
-            string stereoLeftTitle = view == View.Side ? "Stereo" : "Left";
             if (stereo)
             {
                 string caption = Caption(leftTexture, m_PairRate.Hz);
-                HudPanelUtil.SetText(left.title, stereoLeftTitle);
-                HudPanelUtil.SetText(right.title, "Right");
+                HudPanelUtil.SetText(left.title, "Stereo left");
+                HudPanelUtil.SetText(right.title, "Stereo right");
                 HudPanelUtil.SetText(left.caption, caption);
                 HudPanelUtil.SetText(right.caption, caption);
             }
@@ -496,7 +495,7 @@ namespace DeliveryBot
                 var cam = StandInCamera;
                 HudPanelUtil.SetText(left.title, cam != null ? $"Stand-in: {cam.name}" : "No camera");
                 HudPanelUtil.SetText(left.caption, "stereo cameras not found");
-                HudPanelUtil.SetText(right.title, "Right");
+                HudPanelUtil.SetText(right.title, "Stereo right");
                 HudPanelUtil.SetText(right.caption, "no stereo camera");
             }
 

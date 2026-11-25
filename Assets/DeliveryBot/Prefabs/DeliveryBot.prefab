@@ -3324,6 +3324,7 @@ GameObject:
   - component: {fileID: 7003725020663584442}
   - component: {fileID: 4987321395754081735}
   - component: {fileID: 5571697653880976331}
+  - component: {fileID: 5232284675103527488}
   m_Layer: 8
   m_Name: DeliveryBot
   m_TagString: robot
@@ -3447,6 +3448,30 @@ MonoBehaviour:
   rightFrameId: stereo_right_camera_optical_frame
   publishDepthGroundTruth: 0
   depthTopic: /stereo/left/depth_gt
+--- !u!114 &5232284675103527488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4397256063833240777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f5186f26141145f486b455077813e6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SideCameraPublisher
+  width: 640
+  height: 360
+  horizontalFovDeg: 68.755
+  rateHz: 10
+  nearClip: 0.05
+  farClip: 100
+  leftImageTopic: /mono/left/image_raw
+  rightImageTopic: /mono/right/image_raw
+  leftInfoTopic: /mono/left/camera_info
+  rightInfoTopic: /mono/right/camera_info
+  leftFrameId: mono_left_camera_optical_frame
+  rightFrameId: mono_right_camera_optical_frame
 --- !u!1 &4548038261564509272
 GameObject:
   m_ObjectHideFlags: 0
