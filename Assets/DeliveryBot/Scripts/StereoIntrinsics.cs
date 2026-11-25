@@ -36,6 +36,17 @@ namespace DeliveryBot
             Tx = baseline == 0.0 ? 0.0 : -Fx * baseline; // avoid -0 for the left camera
         }
 
+        /// <summary>Vertical FOV (deg) of a square-pixel camera with this horizontal FOV and image size.</summary>
+        public static float VerticalFromHorizontalFov(double horizontalFovDeg, int width, int height)
+        {
+            double halfH = 0.5 * horizontalFovDeg * Math.PI / 180.0;
+            // The image edges are at -0.5 and size - 0.5, so the FOV spans width (not width - 1) pixels.
+            return (float)(2.0 * Math.Atan(Math.Tan(halfH) * height / width) * 180.0 / Math.PI);
+        }
+
+        /// <summary>Horizontal FOV (rad) implied by fx: the angle spanned by the image's outer pixel edges.</summary>
+        public double HorizontalFovRad => 2.0 * Math.Atan(0.5 * Width / Fx);
+
         /// <summary>Pixel of a point given in the camera's own optical frame (metres).</summary>
         public Vector2 Project(Vector3 opticalPoint)
         {
