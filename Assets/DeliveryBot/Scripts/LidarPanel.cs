@@ -30,6 +30,7 @@ namespace DeliveryBot
         const int k_MaxObstacles = 64;
         const int k_MaxZonePoints = 64;
         const float k_SearchInterval = 1f; // s between searches for the lidar and the robot
+        const float k_MockPredictionHorizon = 1.5f; // s, like the tracker's prediction_horizon (one grid step)
         static readonly Vector2 k_UrdfLidarOffset = new Vector2(0.455f, 0f); // base_link → lidar_link (URDF)
 
         [Header("View")]
@@ -210,10 +211,11 @@ namespace DeliveryBot
 
         void AddMockObstacle()
         {
+            Vector2 position = m_LidarOffset + m_Mock.DiscPosition;
             m_Obstacles[m_ObstacleCount++] = new LidarPlotGraphic.Obstacle
             {
-                position = m_LidarOffset + m_Mock.DiscPosition,
-                velocity = m_Mock.DiscVelocity,
+                position = position,
+                predicted = position + m_Mock.DiscVelocity * k_MockPredictionHorizon,
                 radius = MockLaserScanSource.DiscRadius,
             };
         }
@@ -229,17 +231,21 @@ namespace DeliveryBot
             foreach (var o in msg.obstacles)
             {
                 if (m_ObstacleCount >= k_MaxObstacles) break;
-                Vector3 world = new Vector3<FLU>((float)o.position.x, (float)o.position.y, (float)o.position.z).toUnity;
-                Vector3 worldVel = new Vector3<FLU>((float)o.velocity.x, (float)o.velocity.y, (float)o.velocity.z).toUnity;
-                var p = baseLink.InverseTransformPoint(world).To<FLU>();
-                var v = baseLink.InverseTransformDirection(worldVel).To<FLU>();
                 m_Obstacles[m_ObstacleCount++] = new LidarPlotGraphic.Obstacle
                 {
-                    position = new Vector2(p.x, p.y),
-                    velocity = new Vector2(v.x, v.y),
+                    position = MapToBaseLink(baseLink, o.position),
+                    predicted = MapToBaseLink(baseLink, o.predicted_position),
                     radius = o.radius,
                 };
             }
+        }
+
+        /// <summary>A point in map (ROS FLU, origin = Unity world origin) as plot coordinates in base_link.</summary>
+        static Vector2 MapToBaseLink(Transform baseLink, PointMsg point)
+        {
+            Vector3 world = new Vector3<FLU>((float)point.x, (float)point.y, (float)point.z).toUnity;
+            var p = baseLink.InverseTransformPoint(world).To<FLU>();
+            return new Vector2(p.x, p.y);
         }
 
         void OnStopZone(PolygonStampedMsg msg)

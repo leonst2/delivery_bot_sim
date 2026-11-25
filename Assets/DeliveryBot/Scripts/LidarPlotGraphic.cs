@@ -15,9 +15,9 @@ namespace DeliveryBot
         /// <summary>A tracked obstacle in base_link.</summary>
         public struct Obstacle
         {
-            public Vector2 position; // m
-            public Vector2 velocity; // m/s
-            public float radius;     // m
+            public Vector2 position;  // m
+            public Vector2 predicted; // m, where it will be after the tracker's prediction horizon (one grid step)
+            public float radius;      // m
         }
 
         [Header("Scale")]
@@ -34,12 +34,12 @@ namespace DeliveryBot
         [Header("Style")]
         public float pointSize = 3.5f;
         public float lineWidth = 1.5f;
-        [Tooltip("Velocity arrows show this many seconds of travel.")]
-        public float arrowSeconds = 1f;
         public Color ringColor = new Color(1f, 1f, 1f, 0.18f);
         public Color majorRingColor = new Color(1f, 1f, 1f, 0.35f);
         public Color robotColor = new Color(1f, 1f, 1f, 0.9f);
         public Color obstacleColor = new Color(1f, 0.25f, 0.85f, 1f);
+        [Tooltip("Outline at each obstacle's predicted position, at the tip of its prediction arrow.")]
+        public Color predictionColor = new Color(1f, 0.25f, 0.85f, 0.45f);
 
         const int k_RingSegments = 64;
         const int k_ObstacleSegments = 24;
@@ -127,14 +127,16 @@ namespace DeliveryBot
             for (int i = 0; i < m_ZoneCount; i++)
                 AddLine(vh, ToUi(m_Zone[i]), ToUi(m_Zone[(i + 1) % m_ZoneCount]), lineWidth + 0.5f, m_ZoneColor);
 
-            // 5. Tracked obstacles with velocity arrows.
+            // 5. Tracked obstacles: an arrow to the predicted position and an outline there. Static tracks predict
+            //    their own position and get neither.
             for (int i = 0; i < m_ObstacleCount; i++)
             {
                 var o = m_Obstacles[i];
-                AddCircle(vh, o.position, Mathf.Max(o.radius, 0.1f), k_ObstacleSegments, obstacleColor);
-                Vector2 tip = o.position + o.velocity * arrowSeconds;
-                if ((tip - o.position).sqrMagnitude < 1e-4f) continue;
-                Vector2 a = ToUi(o.position), b = ToUi(tip);
+                float radius = Mathf.Max(o.radius, 0.1f);
+                AddCircle(vh, o.position, radius, k_ObstacleSegments, obstacleColor);
+                if ((o.predicted - o.position).sqrMagnitude < 1e-4f) continue;
+                AddCircle(vh, o.predicted, radius, k_ObstacleSegments, predictionColor);
+                Vector2 a = ToUi(o.position), b = ToUi(o.predicted);
                 AddLine(vh, a, b, lineWidth + 0.5f, obstacleColor);
                 Vector2 back = (a - b).normalized * 8f;
                 Vector2 side = new Vector2(-back.y, back.x) * 0.5f;

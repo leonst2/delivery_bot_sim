@@ -1254,11 +1254,11 @@ MonoBehaviour:
   footprintHalfWidth: 0.27
   pointSize: 3.5
   lineWidth: 1.5
-  arrowSeconds: 1
   ringColor: {r: 1, g: 1, b: 1, a: 0.18}
   majorRingColor: {r: 1, g: 1, b: 1, a: 0.35}
   robotColor: {r: 1, g: 1, b: 1, a: 0.9}
   obstacleColor: {r: 1, g: 0.25, b: 0.85, a: 1}
+  predictionColor: {r: 1, g: 0.25, b: 0.85, a: 0.45}
 --- !u!1 &6712889312654845497
 GameObject:
   m_ObjectHideFlags: 0
