@@ -29,10 +29,9 @@ public class LidarScanPublisher : MonoBehaviour
     public float rangeMax = 12f;
     public float rateHz = 10f;
 
-    [Header("Noise (deterministic per seed)")]
+    [Header("Noise (deterministic per SimRandom seed, stream \"lidar\")")]
     public float rangeNoiseSigma = 0.01f; //metres Gaussian
     [Range(0f, 1f)] public float dropoutProbability = 0f;
-    public int seed = 0; // needs to be connected to the scenario seed (sim #27)
 
     [Header("Raycast Mask")]
     [Tooltip("Layers the LiDAR can hit. The 'Robot' layer is removed automatically.")]
@@ -48,12 +47,13 @@ public class LidarScanPublisher : MonoBehaviour
     public event Action<float[], double> ScanPublished;
 
     ROSConnection ros; // ROS connection instance
+    const string k_RandomStream = "lidar";
     System.Random rng;
     int beamCount;
     float angleMin, angleIncrement;
     float[] ranges;
     Vector3[] localDirs; // precomputed beam directions in the local frame
-    double nextScanTime;
+    SensorCaptureClock clock; // scans on the shared sim-time grid k / rateHz, like the cameras
 
     void Awake()
     {
@@ -65,12 +65,17 @@ public class LidarScanPublisher : MonoBehaviour
         Rebuild();
     }
 
+    void OnEnable() => SimRandom.Reseeded += Reseed;
+    void OnDisable() => SimRandom.Reseeded -= Reseed;
+
+    /// <summary>New noise stream from the simulation seed (/sim/reset, /sim/load_scenario).</summary>
+    void Reseed() => rng = SimRandom.Stream(k_RandomStream);
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
         ros.RegisterPublisher<LaserScanMsg>(topic);
-        nextScanTime = Time.fixedTimeAsDouble;
     }
 
     void OnValidate()
@@ -83,7 +88,7 @@ public class LidarScanPublisher : MonoBehaviour
 
     void Rebuild()
     {
-        rng = new System.Random(seed);
+        Reseed();
         beamCount = Mathf.Max(1, Mathf.RoundToInt(fieldOfViewDeg / resolutionDeg));
         angleIncrement = resolutionDeg * Mathf.Deg2Rad; // convert to radians
         angleMin = -fieldOfViewDeg * 0.5f * Mathf.Deg2Rad;
@@ -103,10 +108,7 @@ public class LidarScanPublisher : MonoBehaviour
     void FixedUpdate()
     {
         double now = Time.fixedTimeAsDouble;
-        if (now < nextScanTime) return;
-        nextScanTime += 1.0 / rateHz;
-        if (nextScanTime < now) nextScanTime = now + 1.0 / rateHz; // don't try to catch up after a hitch
-
+        if (!clock.IsDue(now, rateHz)) return;
         Scan(now);
     }
 
@@ -167,11 +169,6 @@ public class LidarScanPublisher : MonoBehaviour
     }
 
     // Box-Muller, seeded RNG => reproducible noise.
-    double Gaussian()
-    {
-        double u1 = 1.0 - rng.NextDouble();
-        double u2 = rng.NextDouble();
-        return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
-    }
+    double Gaussian() => SimRandom.Gaussian(rng);
 }
 }

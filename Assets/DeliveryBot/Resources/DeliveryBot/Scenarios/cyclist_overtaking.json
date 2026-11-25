@@ -1,0 +1,22 @@
+{
+  "name": "cyclist_overtaking",
+  "description": "A cyclist overtakes from behind, going south down the south street.",
+  "staticObstacles": [],
+  "cyclists": [
+    {
+      "name": "cyclist_0",
+      "route": [
+        {
+          "x": 10.0,
+          "y": -1.0
+        },
+        {
+          "x": -45.0,
+          "y": -1.0
+        }
+      ],
+      "speed": 6.0,
+      "startDelay": 2.0
+    }
+  ]
+}

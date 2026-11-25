@@ -1,0 +1,6 @@
+{
+  "name": "multi_stop",
+  "description": "The static city only; the stops are the mission's job (delivery_bot_core#22).",
+  "staticObstacles": [],
+  "cyclists": []
+}
