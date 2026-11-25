@@ -23,6 +23,8 @@ namespace DeliveryBot.Editor
         public const string RobotPrefabPath = Root + "/Prefabs/DeliveryBot.prefab";
         public const string DefaultUrdfPath = "Assets/URDF/delivery_bot/urdf/delivery_bot.urdf";
         public const string RobotLayer = "Robot";
+        // Moving objects (cyclists, pedestrians, …). The occupancy map export ignores this layer.
+        public const string DynamicLayer = "Dynamic";
         public const string ObstacleTag = "Obstacle";
         public const string WallTag = "Wall";
         public const string TestGroundName = "TestGround";
@@ -89,13 +91,14 @@ namespace DeliveryBot.Editor
             int layer = EnsureLayer(RobotLayer);
             if (layer >= 0)
                 Physics.IgnoreLayerCollision(layer, layer, true);
+            EnsureLayer(DynamicLayer);
 
             // The physics rate is deliberately not set here: ProjectSettings/TimeManager.asset is the only place for it.
             Time.maximumDeltaTime = 0.1f;
             Physics.defaultSolverIterations = 12;
             Physics.defaultSolverVelocityIterations = 4;
             AssetDatabase.SaveAssets();
-            Debug.Log("[DeliveryBot] Project settings applied (tags, Robot layer, solver iterations).");
+            Debug.Log("[DeliveryBot] Project settings applied (tags, Robot/Dynamic layers, solver iterations).");
         }
 
         static void EnsureTag(string tag)
@@ -124,7 +127,7 @@ namespace DeliveryBot.Editor
                     return i;
                 }
             }
-            Debug.LogError("[DeliveryBot] No free user layer for 'Robot'.");
+            Debug.LogError("[DeliveryBot] No free user layer for '" + layerName + "'.");
             return -1;
         }
 

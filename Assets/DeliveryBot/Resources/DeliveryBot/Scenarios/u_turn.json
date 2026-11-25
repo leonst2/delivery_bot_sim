@@ -4,8 +4,8 @@
   "staticObstacles": [
     {
       "name": "barrier",
-      "x": -37.0,
-      "y": 0.4,
+      "x": -38.06,
+      "y": -0.01,
       "yaw": 0.0,
       "length": 0.5,
       "width": 18.0,
