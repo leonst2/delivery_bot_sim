@@ -17,6 +17,7 @@ namespace DeliveryBot
         public readonly double Fy;
         public readonly double Cx;
         public readonly double Cy;
+        public readonly double VerticalFovDeg;
 
         /// <summary>Tx of the projection matrix: 0 for the left camera, -fx * baseline for the right one.</summary>
         public readonly double Tx;
@@ -25,6 +26,7 @@ namespace DeliveryBot
         {
             Width = width;
             Height = height;
+            VerticalFovDeg = verticalFovDeg;
             // A Unity camera without physical properties has square pixels and a symmetric frustum whose vertical
             // extent is set by fieldOfView. The image edges are at -0.5 and size - 0.5 in pixel-centre coordinates.
             Fy = 0.5 * height / Math.Tan(0.5 * verticalFovDeg * Math.PI / 180.0);

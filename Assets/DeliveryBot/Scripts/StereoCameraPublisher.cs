@@ -1,12 +1,9 @@
 using System;
-using RosMessageTypes.BuiltinInterfaces;
 using RosMessageTypes.Sensor;
-using RosMessageTypes.Std;
 using Unity.Collections;
 using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace DeliveryBot
 {
@@ -23,9 +20,8 @@ namespace DeliveryBot
     {
         const string k_LeftLink = "stereo_left_camera";
         const string k_RightLink = "stereo_right_camera";
-        const string k_Mount = "CameraSensor";
+        const string k_LogTag = "StereoCamera";
         const float k_UrdfBaseline = 0.062f; // m, stereo_left/right_camera joints in the URDF
-        const int k_ImageQueueSize = 4; // older images are dropped if the bridge falls behind
 
         [Header("Camera")]
         public int width = 640;
@@ -70,7 +66,7 @@ namespace DeliveryBot
         public event Action<double> PairCaptured;
 
         ROSConnection m_Ros;
-        MessagePool<ImageMsg> m_LeftPool, m_RightPool;
+        SimCameraChannel m_Left, m_Right;
         MessagePool<ImageMsg> m_DepthPool;
         Camera m_DepthCamera;
         RenderTexture m_DepthBuffer;
@@ -85,29 +81,42 @@ namespace DeliveryBot
         double m_InFlightStamp;
         int m_Pending;
         bool m_InFlightHasDepth;
+        bool m_InFlightFailed;
         int m_SkippedCaptures;
+        Action<bool> m_OnComplete;
+        Action<AsyncGPUReadbackRequest> m_OnDepth;
 
         void Awake()
         {
-            LeftCamera = SetUpCamera(k_LeftLink);
-            RightCamera = SetUpCamera(k_RightLink);
-            if (LeftCamera == null || RightCamera == null)
+            // The right camera's P[3] needs the baseline, measured between the two mounts in the scene.
+            var leftMount = SimCameraChannel.FindMount(transform, k_LeftLink);
+            var rightMount = SimCameraChannel.FindMount(transform, k_RightLink);
+            if (leftMount != null && rightMount != null)
+            {
+                Baseline = Vector3.Distance(leftMount.position, rightMount.position);
+                if (Mathf.Abs(Baseline - k_UrdfBaseline) > 0.001f)
+                    Debug.LogWarning($"[{k_LogTag}] Baseline is {Baseline * 1000f:F1} mm, the URDF says {k_UrdfBaseline * 1000f:F0} mm.");
+            }
+
+            m_Left = SimCameraChannel.Create(transform, k_LeftLink, new StereoIntrinsics(width, height, verticalFovDeg),
+                nearClip, farClip, leftFrameId, "StereoLeft", k_LogTag);
+            m_Right = SimCameraChannel.Create(transform, k_RightLink,
+                new StereoIntrinsics(width, height, verticalFovDeg, Baseline), nearClip, farClip, rightFrameId,
+                "StereoRight", k_LogTag);
+            if (m_Left == null || m_Right == null)
             {
                 enabled = false;
                 return;
             }
 
-            Baseline = Vector3.Distance(LeftCamera.transform.position, RightCamera.transform.position);
-            if (Mathf.Abs(Baseline - k_UrdfBaseline) > 0.001f)
-                Debug.LogWarning($"[StereoCamera] Baseline is {Baseline * 1000f:F1} mm, the URDF says {k_UrdfBaseline * 1000f:F0} mm.");
-
-            LeftIntrinsics = new StereoIntrinsics(width, height, verticalFovDeg);
-            RightIntrinsics = new StereoIntrinsics(width, height, verticalFovDeg, Baseline);
-
-            LeftTexture = CreateColorTexture("StereoLeft");
-            RightTexture = CreateColorTexture("StereoRight");
-            LatestLeftRgb = new byte[width * height * 3];
-            LatestRightRgb = new byte[width * height * 3];
+            LeftCamera = m_Left.Camera;
+            RightCamera = m_Right.Camera;
+            LeftIntrinsics = m_Left.Intrinsics;
+            RightIntrinsics = m_Right.Intrinsics;
+            LeftTexture = m_Left.Texture;
+            RightTexture = m_Right.Texture;
+            LatestLeftRgb = m_Left.Rgb;
+            LatestRightRgb = m_Right.Rgb;
 
             if (publishDepthGroundTruth)
                 SetUpDepth();
@@ -116,12 +125,10 @@ namespace DeliveryBot
         void Start()
         {
             m_Ros = ROSConnection.GetOrCreateInstance();
-            m_LeftPool = RegisterImagePublisher(leftImageTopic);
-            m_RightPool = RegisterImagePublisher(rightImageTopic);
-            m_Ros.RegisterPublisher<CameraInfoMsg>(leftInfoTopic, k_ImageQueueSize);
-            m_Ros.RegisterPublisher<CameraInfoMsg>(rightInfoTopic, k_ImageQueueSize);
+            m_Left.Register(m_Ros, leftImageTopic, leftInfoTopic);
+            m_Right.Register(m_Ros, rightImageTopic, rightInfoTopic);
             if (publishDepthGroundTruth)
-                m_DepthPool = RegisterImagePublisher(depthTopic);
+                m_DepthPool = SimCameraChannel.RegisterImagePublisher(m_Ros, depthTopic);
             m_NextCaptureTime = Time.fixedTimeAsDouble;
         }
 
@@ -137,66 +144,21 @@ namespace DeliveryBot
 
         void OnDestroy()
         {
-            foreach (var texture in new[] { LeftTexture, RightTexture, DepthTexture, m_DepthBuffer })
+            m_Left?.Release();
+            m_Right?.Release();
+            foreach (var texture in new[] { DepthTexture, m_DepthBuffer })
                 if (texture != null) texture.Release();
             if (m_LinearDepth != null) Destroy(m_LinearDepth);
         }
 
         // ---------------------------------------------------------------- setup
 
-        Camera SetUpCamera(string linkName)
-        {
-            var mount = FindMount(linkName);
-            if (mount == null) return null;
-            // Not "??": a missing component is a Unity fake-null, which ?? doesn't see.
-            if (!mount.TryGetComponent(out Camera cam))
-                cam = mount.gameObject.AddComponent<Camera>();
-            ConfigureCamera(cam);
-            return cam;
-        }
-
-        void ConfigureCamera(Camera cam)
-        {
-            // Rendered on demand at rateHz (SubmitRenderRequest), not every frame.
-            cam.enabled = false;
-            cam.usePhysicalProperties = false;
-            cam.fieldOfView = verticalFovDeg;
-            cam.aspect = (float)width / height;
-            cam.nearClipPlane = nearClip;
-            cam.farClipPlane = farClip;
-            cam.allowHDR = false;
-            cam.allowMSAA = false;
-        }
-
-        Transform FindMount(string linkName)
-        {
-            foreach (var t in GetComponentsInChildren<Transform>(true))
-            {
-                if (t.name != linkName) continue;
-                var mount = t.Find(k_Mount);
-                if (mount != null) return mount;
-            }
-            Debug.LogError($"[StereoCamera] No {k_Mount} mount under {linkName}. Run Tools > Delivery Bot > Setup > Configure.");
-            return null;
-        }
-
-        RenderTexture CreateColorTexture(string name)
-        {
-            var texture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
-            {
-                name = name,
-                antiAliasing = 1,
-            };
-            texture.Create();
-            return texture;
-        }
-
         void SetUpDepth()
         {
             var shader = Resources.Load<Shader>("DeliveryBot/LinearDepth");
             if (shader == null)
             {
-                Debug.LogError("[StereoCamera] Resources/DeliveryBot/LinearDepth.shader missing; depth_gt disabled.");
+                Debug.LogError($"[{k_LogTag}] Resources/DeliveryBot/LinearDepth.shader missing; depth_gt disabled.");
                 publishDepthGroundTruth = false;
                 return;
             }
@@ -206,21 +168,13 @@ namespace DeliveryBot
             var go = new GameObject("DepthGroundTruthCamera") { layer = LeftCamera.gameObject.layer };
             go.transform.SetParent(LeftCamera.transform, false);
             m_DepthCamera = go.AddComponent<Camera>();
-            ConfigureCamera(m_DepthCamera);
+            SimCameraChannel.Configure(m_DepthCamera, LeftIntrinsics, nearClip, farClip);
 
             m_DepthBuffer = new RenderTexture(width, height, 32, RenderTextureFormat.Depth) { name = "StereoDepthBuffer" };
             m_DepthBuffer.Create();
             DepthTexture = new RenderTexture(width, height, 0, RenderTextureFormat.RFloat) { name = "StereoDepthGT" };
             DepthTexture.Create();
             LatestDepth = new float[width * height];
-        }
-
-        MessagePool<ImageMsg> RegisterImagePublisher(string topic)
-        {
-            // The connector serializes on its sender thread later, so image buffers are recycled through its pool.
-            var pool = new MessagePool<ImageMsg>(k_ImageQueueSize + 2);
-            m_Ros.RegisterPublisher<ImageMsg>(topic, k_ImageQueueSize).SetMessagePool(pool);
-            return pool;
         }
 
         // ---------------------------------------------------------------- capture
@@ -243,16 +197,16 @@ namespace DeliveryBot
             if (m_InFlight)
             {
                 if (++m_SkippedCaptures % 50 == 1)
-                    Debug.LogWarning($"[StereoCamera] GPU readback too slow, skipped {m_SkippedCaptures} captures.");
+                    Debug.LogWarning($"[{k_LogTag}] GPU readback too slow, skipped {m_SkippedCaptures} captures.");
                 return;
             }
 
-            Render(LeftCamera, LeftTexture);
-            Render(RightCamera, RightTexture);
+            m_Left.Render();
+            m_Right.Render();
             bool withDepth = publishDepthGroundTruth && m_DepthCamera != null;
             if (withDepth)
             {
-                Render(m_DepthCamera, m_DepthBuffer);
+                SimCameraChannel.Render(m_DepthCamera, m_DepthBuffer);
                 m_LinearDepth.SetTexture("_DepthTex", m_DepthBuffer, RenderTextureSubElement.Depth);
                 m_LinearDepth.SetVector("_ClipPlanes", new Vector4(nearClip, farClip, 0f, 0f));
                 Graphics.Blit(null, DepthTexture, m_LinearDepth);
@@ -262,31 +216,12 @@ namespace DeliveryBot
             m_InFlightStamp = m_DueStamp;
             m_InFlightHasDepth = withDepth;
             m_Pending = withDepth ? 3 : 2;
-            AsyncGPUReadback.Request(LeftTexture, 0, TextureFormat.RGBA32, r => OnColor(r, LatestLeftRgb));
-            AsyncGPUReadback.Request(RightTexture, 0, TextureFormat.RGBA32, r => OnColor(r, LatestRightRgb));
+            m_OnComplete ??= Complete; // cached delegates: no allocation per capture
+            m_OnDepth ??= OnDepth;
+            m_Left.RequestReadback(m_OnComplete);
+            m_Right.RequestReadback(m_OnComplete);
             if (withDepth)
-                AsyncGPUReadback.Request(DepthTexture, 0, TextureFormat.RFloat, OnDepth);
-        }
-
-        static void Render(Camera cam, RenderTexture target)
-        {
-            var request = new UniversalRenderPipeline.SingleCameraRequest { destination = target };
-            if (RenderPipeline.SupportsRenderRequest(cam, request))
-            {
-                RenderPipeline.SubmitRenderRequest(cam, request);
-                return;
-            }
-            var previous = cam.targetTexture;
-            cam.targetTexture = target;
-            cam.Render();
-            cam.targetTexture = previous;
-        }
-
-        void OnColor(AsyncGPUReadbackRequest request, byte[] rgb)
-        {
-            if (!request.hasError)
-                FlipRgbaToRgb(request.GetData<byte>(), rgb);
-            Complete(request.hasError);
+                AsyncGPUReadback.Request(DepthTexture, 0, TextureFormat.RFloat, m_OnDepth);
         }
 
         void OnDepth(AsyncGPUReadbackRequest request)
@@ -300,24 +235,6 @@ namespace DeliveryBot
             Complete(request.hasError);
         }
 
-        /// <summary>Unity reads textures back bottom row first; ROS images are top row first.</summary>
-        void FlipRgbaToRgb(NativeArray<byte> rgba, byte[] rgb)
-        {
-            for (int row = 0; row < height; row++)
-            {
-                int src = (height - 1 - row) * width * 4;
-                int dst = row * width * 3;
-                for (int x = 0; x < width; x++, src += 4, dst += 3)
-                {
-                    rgb[dst] = rgba[src];
-                    rgb[dst + 1] = rgba[src + 1];
-                    rgb[dst + 2] = rgba[src + 2];
-                }
-            }
-        }
-
-        bool m_InFlightFailed;
-
         void Complete(bool failed)
         {
             m_InFlightFailed |= failed;
@@ -328,7 +245,7 @@ namespace DeliveryBot
             m_InFlightFailed = false;
             if (!ok)
             {
-                Debug.LogWarning("[StereoCamera] GPU readback failed; pair dropped.");
+                Debug.LogWarning($"[{k_LogTag}] GPU readback failed; pair dropped.");
                 return;
             }
 
@@ -345,38 +262,16 @@ namespace DeliveryBot
             // while disconnected reaches the endpoint first and is rejected with "Not registered to publish topic".
             if (m_Ros == null || !RosBridgeStatus.IsConnected) return;
 
-            int sec = (int)Math.Floor(stamp);
-            var time = new TimeMsg { sec = sec, nanosec = (uint)((stamp - sec) * 1e9) };
-
-            m_Ros.Publish(leftImageTopic, FillImage(m_LeftPool, time, leftFrameId, "rgb8", 3, LatestLeftRgb));
-            m_Ros.Publish(rightImageTopic, FillImage(m_RightPool, time, rightFrameId, "rgb8", 3, LatestRightRgb));
-            m_Ros.Publish(leftInfoTopic, LeftIntrinsics.ToCameraInfo(new HeaderMsg { stamp = time, frame_id = leftFrameId }));
-            m_Ros.Publish(rightInfoTopic, RightIntrinsics.ToCameraInfo(new HeaderMsg { stamp = time, frame_id = rightFrameId }));
+            var time = SimCameraChannel.ToTimeMsg(stamp);
+            m_Left.Publish(m_Ros, time);
+            m_Right.Publish(m_Ros, time);
 
             if (withDepth)
             {
-                var msg = FillImage(m_DepthPool, time, leftFrameId, "32FC1", 4, null);
+                var msg = SimCameraChannel.FillImage(m_DepthPool, time, leftFrameId, width, height, "32FC1", 4, null);
                 Buffer.BlockCopy(LatestDepth, 0, msg.data, 0, msg.data.Length);
                 m_Ros.Publish(depthTopic, msg);
             }
-        }
-
-        ImageMsg FillImage(MessagePool<ImageMsg> pool, TimeMsg time, string frameId, string encoding, int bytesPerPixel,
-            byte[] pixels)
-        {
-            var msg = pool.GetOrCreateMessage();
-            int size = width * height * bytesPerPixel;
-            if (msg.data == null || msg.data.Length != size)
-                msg.data = new byte[size];
-            if (pixels != null)
-                Buffer.BlockCopy(pixels, 0, msg.data, 0, size);
-            msg.header = new HeaderMsg { stamp = time, frame_id = frameId };
-            msg.height = (uint)height;
-            msg.width = (uint)width;
-            msg.encoding = encoding;
-            msg.is_bigendian = BitConverter.IsLittleEndian ? (byte)0 : (byte)1;
-            msg.step = (uint)(width * bytesPerPixel);
-            return msg;
         }
     }
 }
