@@ -108,7 +108,7 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
 | --- | --- |
 | Top left (`LidarSlot`) | LiDAR panel: polar scan plot (raw, filtered or mock; `L` cycles) with tracked obstacles and the stop zone |
 | Bottom left (`MinimapSlot`) | Minimap panel slot |
-| Right half (`CameraSlot`) | Camera panel: stereo pair, left, right or false-colour disparity (`V` cycles) |
+| Right half (`CameraSlot`) | Camera panel: stereo pair, stereo left, stereo right, false-colour disparity or the side cameras (`V` cycles) |
 | Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
 
 `Assets/DeliveryBot/UI/SimHUD.prefab` provides the Screen Space Overlay canvas and independently replaceable panel slots.

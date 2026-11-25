@@ -48,8 +48,8 @@ namespace DeliveryBot.Editor
                 layout.childControlWidth = layout.childControlHeight = true;
                 layout.childForceExpandWidth = layout.childForceExpandHeight = true;
                 panel.stereoButton = HudBuilderUtil.CreateButton(buttons, "StereoButton", "Stereo");
-                panel.leftButton = HudBuilderUtil.CreateButton(buttons, "LeftButton", "Left");
-                panel.rightButton = HudBuilderUtil.CreateButton(buttons, "RightButton", "Right");
+                panel.leftButton = HudBuilderUtil.CreateButton(buttons, "LeftButton", "Stereo L");
+                panel.rightButton = HudBuilderUtil.CreateButton(buttons, "RightButton", "Stereo R");
                 panel.disparityButton = HudBuilderUtil.CreateButton(buttons, "DisparityButton", "Disparity");
                 panel.sideButton = HudBuilderUtil.CreateButton(buttons, "SideButton", "Side");
                 panel.detectionsButton = HudBuilderUtil.CreateButton(buttons, "DetectionsButton", "Detections");
@@ -71,8 +71,8 @@ namespace DeliveryBot.Editor
                 feedLayout.childControlWidth = feedLayout.childControlHeight = true;
                 feedLayout.childForceExpandWidth = feedLayout.childForceExpandHeight = true;
                 panel.sideLeft = CreateFeed(feeds, "SideLeftFeed", "Left side", 16f / 9f, k_MarkersPerSideFeed);
-                panel.left = CreateFeed(feeds, "LeftFeed", "Left", 4f / 3f);
-                panel.right = CreateFeed(feeds, "RightFeed", "Right", 4f / 3f);
+                panel.left = CreateFeed(feeds, "LeftFeed", "Stereo left", 4f / 3f);
+                panel.right = CreateFeed(feeds, "RightFeed", "Stereo right", 4f / 3f);
                 panel.sideRight = CreateFeed(feeds, "SideRightFeed", "Right side", 16f / 9f, k_MarkersPerSideFeed);
                 panel.disparity = CreateFeed(feeds, "DisparityFeed", "Disparity", 4f / 3f);
                 panel.sideLeft.root.SetActive(false);

@@ -51,7 +51,7 @@ to the builder the same way, or integrated manually as nested prefab instances u
 | View | Content |
 | --- | --- |
 | Stereo | Left and right stereo feeds side by side, each labelled |
-| Left / Right | One stereo feed, larger |
+| Stereo L / Stereo R | One stereo feed (forward-facing), larger |
 | Disparity | `/stereo/disparity` (32FC1 from delivery_bot_core#10) in false colour |
 | Side | Left side camera, left stereo feed, right side camera, each labelled, with optional detection markers |
 
