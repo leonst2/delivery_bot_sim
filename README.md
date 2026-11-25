@@ -97,10 +97,36 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/tracked_obstacles` | `delivery_bot_interfaces/TrackedObstacleArray` (shown in the LiDAR panel) | ROS → Unity | `map` |
 | `/safety/state` | `std_msgs/String` (latched) | ROS → Unity | |
 | `/safety/stop_zone` | `geometry_msgs/PolygonStamped` (latched, current stop zone; shown in the LiDAR panel) | ROS → Unity | `base_link` |
+| `/sim/reset` | service `delivery_bot_interfaces/ResetSim` (robot pose + seed) | ROS → Unity | `map` |
+| `/sim/load_scenario` | service `delivery_bot_interfaces/LoadScenario` (scenario name + seed) | ROS → Unity | `map` |
+| `/sim/collisions` | `delivery_bot_interfaces/CollisionEvent` (every robot contact; wheels on the ground excluded) | Unity → ROS | `map` |
 
 `/cmd_vel` is `geometry_msgs/Twist`, Nav2's default on Jazzy. Switch both sides to `TwistStamped` if
 `enable_stamped_cmd_vel` is turned on. Unity uses RUF coordinates (right, up, forward) and ROS uses FLU (forward,
 left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>()`).
+
+### Simulation control
+
+`SimControl` (in CitySim) lets the scenario runner (delivery_bot_core#24) drive the simulation reproducibly:
+
+- **`/sim/load_scenario`** replaces the scenario objects with those of the named scenario and sets the seed. The
+  definitions are JSON files in `Assets/DeliveryBot/Resources/DeliveryBot/Scenarios/` (map frame; static boxes and
+  cyclist routes). Benchmark suite v1: `empty_street`, `static_obstacles`, `narrow_passage`, `u_turn`,
+  `cyclist_crossing`, `cyclist_oncoming`, `cyclist_overtaking`, `multi_stop`. The static ones are on the street south
+  of the central intersection. The cyclist scenarios answer `success = false` until the dynamic-object spawner (#16)
+  implements `IDynamicObjectSpawner`.
+- **`/sim/reset`** removes dynamic objects, sets the seed and places `base_link` at the requested `map` pose (yaw only).
+  It answers once the robot has been at rest for 10 physics steps (about 0.65 s), or with `success = false` after 5 s.
+  Scenario objects stay. A runner loads the scenario once, then resets before every run.
+- **`/sim/collisions`** reports every contact between a robot link and another object, except wheels rolling on the
+  ground.
+
+**One seed for everything:** every random source draws from its own named stream of `SimRandom`
+(`SimRandom.Stream("lidar")`, …) and recreates it on `SimRandom.Reseeded`. New noise sources (encoders, IMU, cyclist
+spawning) do the same; never use `UnityEngine.Random`. Sensors capture on the absolute sim-time grid `k / rate`, so they
+run in the same phase after every reset. **Tools > Delivery Bot > Check Determinism** (Play mode, CitySim) drives the
+same script three times and checks that seed 42 twice gives bit-identical trajectories and LiDAR scans and seed 43
+different noise.
 
 ## UI layout
 
