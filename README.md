@@ -115,7 +115,7 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
   cyclist routes). Benchmark suite v1: `empty_street`, `static_obstacles`, `narrow_passage`, `u_turn`,
   `cyclist_crossing`, `cyclist_oncoming`, `cyclist_overtaking`, `multi_stop`. The static ones are on the street south
   of the central intersection. The cyclist scenarios assume the robot drives south in the right-hand lane (map
-  y ≈ 2): a cyclist crossing the central intersection, one oncoming head-on and a faster one overtaking from behind.
+  y ≈ 1.6): a cyclist crossing the central intersection, one oncoming head-on and a faster one overtaking from behind.
 - **`/sim/reset`** removes dynamic objects, sets the seed and places `base_link` at the requested `map` pose (yaw only).
   It answers once the robot has been at rest for 10 physics steps (about 0.65 s), or with `success = false` after 5 s.
   Scenario boxes stay; cyclists are removed. **Per run, call `/sim/reset` first, then `/sim/load_scenario`**: loading

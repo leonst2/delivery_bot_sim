@@ -1,18 +1,18 @@
 {
   "name": "cyclist_crossing",
-  "description": "A cyclist rides east through the central intersection in the east-west street's south lane (map x -0.5).",
+  "description": "A cyclist rides east through the central intersection in the east-west street's south lane (map x -1.56).",
   "staticObstacles": [],
   "cyclists": [
     {
       "name": "cyclist_0",
       "route": [
         {
-          "x": -0.5,
-          "y": 40.0
+          "x": -1.56,
+          "y": 39.59
         },
         {
-          "x": -0.5,
-          "y": -40.0
+          "x": -1.56,
+          "y": -40.41
         }
       ],
       "speed": 4.0,

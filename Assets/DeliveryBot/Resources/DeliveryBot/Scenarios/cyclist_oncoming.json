@@ -1,18 +1,18 @@
 {
   "name": "cyclist_oncoming",
-  "description": "A cyclist rides north up the south street in the robot's lane (robot southbound in the right-hand lane, map y 2.0), head-on.",
+  "description": "A cyclist rides north up the south street in the robot's lane (robot southbound in the right-hand lane, map y 1.59), head-on.",
   "staticObstacles": [],
   "cyclists": [
     {
       "name": "cyclist_0",
       "route": [
         {
-          "x": -45.0,
-          "y": 2.0
+          "x": -46.06,
+          "y": 1.59
         },
         {
-          "x": 5.0,
-          "y": 2.0
+          "x": 3.94,
+          "y": 1.59
         }
       ],
       "speed": 4.0,
