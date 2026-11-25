@@ -42,7 +42,9 @@ docker compose -f docker/compose.yaml down       # named volumes keep the worksp
 check) is `delivery_bot_core/docker/Dockerfile` in the submodule. Change toolchains there, in delivery_bot_core.
 `docker/Dockerfile` in this repo is only the simulation layer `FROM` that image: ROS-TCP-Endpoint + an entrypoint
 that rebuilds `ros2_ws/src` (mounted read-only) incrementally on every start, so a restart picks up submodule
-changes. `SKIP_BUILD=1` skips the build.
+changes. `SKIP_BUILD=1` skips the build. `docker/patches/` holds patches applied to the pinned ROS-TCP-Endpoint at image
+build time. `ros_tcp_endpoint-reregister.patch` stops the endpoint from crashing (`InvalidHandle`, then "Connection
+refused" in Unity) when Unity reconnects and registers its topics again. Rebuild the image after changing a patch.
 
 ## Architecture rules
 
@@ -60,7 +62,8 @@ changes. `SKIP_BUILD=1` skips the build.
   step is an arc along the path (min turning radius ≈ 1.25 m), not a turn in place. The loop must be
   deterministic: no randomness and fixed tie-breaking.
 - **Frames:** Unity is RUF, ROS is FLU. Convert with ROS-TCP-Connector's `To<FLU>()` / `From<FLU>()`, never by
-  hand. All ROS nodes use `use_sim_time:=true` with the `/clock` that Unity publishes.
+  hand. All ROS nodes use `use_sim_time:=true` with the `/clock` that Unity publishes. Camera images and
+  `camera_info` use the URDF's `*_optical_frame` (z forward, x right, y down), not the body frame of the camera link.
 - **Topic names and types** are fixed by the README table. The issues were written against it so they can be
   worked on in parallel. Change the table and the affected issues together.
 - **`Editor/DeliveryBotSetupWindow.cs` (Tools > Delivery Bot > Setup)** imports the URDF and configures the robot

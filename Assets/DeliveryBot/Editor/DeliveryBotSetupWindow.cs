@@ -338,6 +338,9 @@ namespace DeliveryBot.Editor
                 if (link != null)
                     Mount(link, mountName);
             }
+            // Add their cameras to the stereo and mono (side) CameraSensor mounts at runtime.
+            GetOrAdd<StereoCameraPublisher>(robot);
+            GetOrAdd<SideCameraPublisher>(robot);
 
             // Put the robot onto the test ground of the open scene.
             var ground = GameObject.Find(TestGroundName);

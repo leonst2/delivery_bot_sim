@@ -29,12 +29,14 @@ namespace DeliveryBot.Editor
             try
             {
                 ConfigureCanvas(root);
-                CreatePanelSlot(root.transform, "LidarSlot", "LiDAR panel slot",
+                var lidarSlot = CreatePanelSlot(root.transform, "LidarSlot", "LiDAR panel slot",
                     new Vector2(0.02f, 0.56f), new Vector2(0.27f, 0.96f));
+                NestPanel(lidarSlot, LidarPanelPrefabBuilder.PrefabPath);
                 CreatePanelSlot(root.transform, "MinimapSlot", "Minimap panel slot",
                     new Vector2(0.02f, 0.10f), new Vector2(0.27f, 0.50f));
-                CreatePanelSlot(root.transform, "CameraSlot", "Camera panel slot",
+                var cameraSlot = CreatePanelSlot(root.transform, "CameraSlot", "Camera panel slot",
                     new Vector2(0.50f, 0.08f), new Vector2(0.99f, 0.96f));
+                NestPanel(cameraSlot, CameraPanelPrefabBuilder.PrefabPath);
                 CreateStatusBar(root.transform);
                 prefab = PrefabUtility.SaveAsPrefabAsset(root, k_PrefabPath);
             }
@@ -102,6 +104,24 @@ namespace DeliveryBot.Editor
             label.alignment = TextAnchor.MiddleCenter;
 
             return slot;
+        }
+
+        /// <summary>
+        /// Puts a panel prefab into its slot as a nested prefab instance, so rebuilding the HUD keeps the panel.
+        /// Panels that don't exist yet are skipped and the slot keeps its placeholder.
+        /// </summary>
+        static void NestPanel(RectTransform slot, string panelPrefabPath)
+        {
+            var panelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(panelPrefabPath);
+            if (panelPrefab == null)
+                return;
+
+            var panel = (GameObject)PrefabUtility.InstantiatePrefab(panelPrefab, slot);
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
         }
 
         static void CreateStatusBar(Transform parent)

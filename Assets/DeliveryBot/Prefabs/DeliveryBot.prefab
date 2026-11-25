@@ -1695,6 +1695,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4120946769429738792}
   - component: {fileID: 7777776736836943603}
+  - component: {fileID: 4796760181829349161}
   m_Layer: 8
   m_Name: LidarSensor
   m_TagString: Untagged
@@ -1731,6 +1732,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SensorPoseRandomizer
   positionJitter: 0.005
   angleJitter: 1.5
+--- !u!114 &4796760181829349161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753928010292409819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe2b63a52254e24ea9225eb23ab3f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LidarScanPublisher
+  topic: /scan
+  frameId: lidar_link
+  fieldOfViewDeg: 360
+  resolutionDeg: 1
+  rangeMin: 0.1
+  rangeMax: 12
+  rateHz: 10
+  rangeNoiseSigma: 0.01
+  dropoutProbability: 0
+  seed: 0
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  drawDebugRays: 0
 --- !u!1 &1792706795655238606
 GameObject:
   m_ObjectHideFlags: 0
@@ -3296,6 +3323,8 @@ GameObject:
   - component: {fileID: 774582680732529530}
   - component: {fileID: 7003725020663584442}
   - component: {fileID: 4987321395754081735}
+  - component: {fileID: 5571697653880976331}
+  - component: {fileID: 5232284675103527488}
   m_Layer: 8
   m_Name: DeliveryBot
   m_TagString: robot
@@ -3393,6 +3422,56 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.DeliveryBotKeyboardDrive
   maxSpeed: 2
   maxReverseSpeed: 0.6
+--- !u!114 &5571697653880976331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4397256063833240777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d002e3bb424fa4fddb40feffbaf8a13b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.StereoCameraPublisher
+  width: 640
+  height: 480
+  verticalFovDeg: 50
+  rateHz: 10
+  nearClip: 0.05
+  farClip: 100
+  leftImageTopic: /stereo/left/image_raw
+  rightImageTopic: /stereo/right/image_raw
+  leftInfoTopic: /stereo/left/camera_info
+  rightInfoTopic: /stereo/right/camera_info
+  leftFrameId: stereo_left_camera_optical_frame
+  rightFrameId: stereo_right_camera_optical_frame
+  publishDepthGroundTruth: 0
+  depthTopic: /stereo/left/depth_gt
+--- !u!114 &5232284675103527488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4397256063833240777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f5186f26141145f486b455077813e6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.SideCameraPublisher
+  width: 640
+  height: 360
+  horizontalFovDeg: 68.755
+  rateHz: 10
+  nearClip: 0.05
+  farClip: 100
+  leftImageTopic: /mono/left/image_raw
+  rightImageTopic: /mono/right/image_raw
+  leftInfoTopic: /mono/left/camera_info
+  rightInfoTopic: /mono/right/camera_info
+  leftFrameId: mono_left_camera_optical_frame
+  rightFrameId: mono_right_camera_optical_frame
 --- !u!1 &4548038261564509272
 GameObject:
   m_ObjectHideFlags: 0

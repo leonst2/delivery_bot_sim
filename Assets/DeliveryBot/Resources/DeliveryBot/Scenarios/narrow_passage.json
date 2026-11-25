@@ -1,0 +1,25 @@
+{
+  "name": "narrow_passage",
+  "description": "South street closed by two walls from house to house, leaving a 1.2 m gap (robot 0.54 m wide).",
+  "staticObstacles": [
+    {
+      "name": "wall_left",
+      "x": -37.0,
+      "y": 5.2,
+      "yaw": 0.0,
+      "length": 0.5,
+      "width": 8.4,
+      "height": 1.0
+    },
+    {
+      "name": "wall_right",
+      "x": -37.0,
+      "y": -4.4,
+      "yaw": 0.0,
+      "length": 0.5,
+      "width": 8.4,
+      "height": 1.0
+    }
+  ],
+  "cyclists": []
+}

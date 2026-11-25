@@ -7,10 +7,17 @@ FROM core-dev
 
 # Unity ROS-TCP-Endpoint, ROS 2 branch (main-ros2 = v0.7.0), pinned. Built into its own overlay so the
 # workspace volumes mounted at /ws can't hide it.
+# patches/ros_tcp_endpoint-reregister.patch: when Unity reconnects (next Play, domain reload) it registers its topics
+# again. Upstream destroys the existing node before removing it from the executor, which on Jazzy races with the
+# executor thread and kills the endpoint (rclpy InvalidHandle, then "Connection refused" in Unity). The patch keeps
+# nodes whose topic is registered again with the same type and removes replaced nodes from the executor first.
 ARG ROS_TCP_ENDPOINT_SHA=54c1a64b6d5ef6ffa0a0431570bb74329b79b15b
+COPY patches/ /tmp/ros_tcp_endpoint_patches/
 RUN mkdir -p /opt/ros_tcp_endpoint/src \
     && git clone https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git /opt/ros_tcp_endpoint/src/ros_tcp_endpoint \
     && git -C /opt/ros_tcp_endpoint/src/ros_tcp_endpoint checkout --quiet "${ROS_TCP_ENDPOINT_SHA}" \
+    && git -C /opt/ros_tcp_endpoint/src/ros_tcp_endpoint apply /tmp/ros_tcp_endpoint_patches/ros_tcp_endpoint-reregister.patch \
+    && rm -rf /tmp/ros_tcp_endpoint_patches \
     && cd /opt/ros_tcp_endpoint \
     && . /opt/ros/jazzy/setup.sh \
     && colcon build --event-handlers console_cohesion+ \

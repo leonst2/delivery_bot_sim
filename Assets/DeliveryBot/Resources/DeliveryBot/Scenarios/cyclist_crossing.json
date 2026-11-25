@@ -1,0 +1,25 @@
+{
+  "name": "cyclist_crossing",
+  "description": "A cyclist rides east through the central intersection in the east-west street's south lane (map x -0.5).",
+  "staticObstacles": [],
+  "cyclists": [
+    {
+      "name": "cyclist_0",
+      "route": [
+        {
+          "x": -0.5,
+          "y": 40.0
+        },
+        {
+          "x": -0.5,
+          "y": -40.0
+        }
+      ],
+      "speed": 4.0,
+      "startDelay": 0.0,
+      "loop": false,
+      "speedJitter": 0.0,
+      "startDelayJitter": 0.0
+    }
+  ]
+}

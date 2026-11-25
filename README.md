@@ -23,7 +23,7 @@ now only to simulate the world, the robot's physics and its sensors.
 │  City scene: static objects (buildings, parked cars) + dynamic objects    │
 │  (cyclists)                                                               │
 │  delivery_bot (URDF → ArticulationBodies)                                 │
-│    sensors:   2D LiDAR → /scan, stereo cameras → /stereo/*                │
+│    sensors:   2D LiDAR → /scan, stereo → /stereo/*, side cams → /mono/*   │
 │    state:     /odom, /tf (odom→base_link), /clock                         │
 │    actuation: /cmd_vel → DeliveryBotDrive (Ackermann)                     │
 │  UI: minimap, LiDAR view, camera views, Nav2 path overlay                 │
@@ -82,25 +82,68 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/tf_static` | `tf2_msgs/TFMessage` (sensor frames) | `robot_state_publisher` | |
 | `/odom` | `nav_msgs/Odometry` | Unity → ROS | `odom` → `base_link` |
 | `/scan` | `sensor_msgs/LaserScan` | Unity → ROS | `lidar_link` |
-| `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` | Unity → ROS | `stereo_{left,right}_camera` |
-| `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera` |
+| `/scan/filtered` | `sensor_msgs/LaserScan` (from the scan filter; shown in the LiDAR panel) | ROS → Unity | `lidar_link` |
+| `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
+| `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
+| `/stereo/left/depth_gt` | `sensor_msgs/Image` (32FC1, m; optional ground truth) | Unity → ROS | `stereo_left_camera_optical_frame` |
+| `/mono/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8; side cameras, same stamps as the stereo pair) | Unity → ROS | `mono_{left,right}_camera_optical_frame` |
+| `/mono/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `mono_{left,right}_camera_optical_frame` |
+| `/stereo/disparity` | `sensor_msgs/Image` (32FC1, px; shown in the camera panel) | ROS → Unity | `stereo_left_camera_optical_frame` |
+| `/perception/side_points` | `sensor_msgs/PointCloud2` (x/y/z, one ground point per side detection; shown in the camera panel) | ROS → Unity | `base_link` |
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → Unity | `base_link` |
-| `/plan` | `nav_msgs/Path` | ROS → Unity | `map` |
+| `/plan` | `nav_msgs/Path` (shown as the 3D path overlay) | ROS → Unity | `map` |
 | `/goal_pose` | `geometry_msgs/PoseStamped` | Unity → ROS | `map` |
-| `/grid_step/state` | `std_msgs/String` | ROS → Unity | |
-| `/tracked_obstacles` | `visualization_msgs/MarkerArray` | ROS → Unity | `map` |
+| `/grid_step/state` | `delivery_bot_interfaces/GridStepState` (transient-local; status bar, clears the path overlay on DONE/FAILED) | ROS → Unity | |
+| `/tracked_obstacles` | `delivery_bot_interfaces/TrackedObstacleArray` (shown in the LiDAR panel) | ROS → Unity | `map` |
+| `/safety/state` | `std_msgs/String` (latched) | ROS → Unity | |
+| `/safety/stop_zone` | `geometry_msgs/PolygonStamped` (latched, current stop zone; shown in the LiDAR panel) | ROS → Unity | `base_link` |
+| `/sim/reset` | service `delivery_bot_interfaces/ResetSim` (robot pose + seed) | ROS → Unity | `map` |
+| `/sim/load_scenario` | service `delivery_bot_interfaces/LoadScenario` (scenario name + seed) | ROS → Unity | `map` |
+| `/sim/collisions` | `delivery_bot_interfaces/CollisionEvent` (every robot contact; wheels on the ground excluded) | Unity → ROS | `map` |
+| `/ground_truth/dynamic_objects` | `delivery_bot_interfaces/TrackedObstacleArray` (true id, position, velocity, radius of the cyclists; 20 Hz; **evaluation only**) | Unity → ROS | `map` |
 
 `/cmd_vel` is `geometry_msgs/Twist`, Nav2's default on Jazzy. Switch both sides to `TwistStamped` if
 `enable_stamped_cmd_vel` is turned on. Unity uses RUF coordinates (right, up, forward) and ROS uses FLU (forward,
 left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>()`).
 
+### Simulation control
+
+`SimControl` (in CitySim) lets the scenario runner (delivery_bot_core#24) drive the simulation reproducibly:
+
+- **`/sim/load_scenario`** replaces the scenario objects with those of the named scenario and sets the seed. The
+  definitions are JSON files in `Assets/DeliveryBot/Resources/DeliveryBot/Scenarios/` (map frame; static boxes and
+  cyclist routes). Benchmark suite v1: `empty_street`, `static_obstacles`, `narrow_passage`, `u_turn`,
+  `cyclist_crossing`, `cyclist_oncoming`, `cyclist_overtaking`, `multi_stop`. The static ones are on the street south
+  of the central intersection. The cyclist scenarios assume the robot drives south in the right-hand lane (map
+  y ≈ 2): a cyclist crossing the central intersection, one oncoming head-on and a faster one overtaking from behind.
+- **`/sim/reset`** removes dynamic objects, sets the seed and places `base_link` at the requested `map` pose (yaw only).
+  It answers once the robot has been at rest for 10 physics steps (about 0.65 s), or with `success = false` after 5 s.
+  Scenario boxes stay; cyclists are removed. **Per run, call `/sim/reset` first, then `/sim/load_scenario`**: loading
+  spawns the cyclists, and their routes start at that moment.
+- **`/sim/collisions`** reports every contact between a robot link and another object, except wheels rolling on the
+  ground.
+
+**Cyclists** (`DynamicObjectSpawner` in CitySim, `CyclistAgent`): kinematic bodies (1.8 × 0.6 × 1.7 m) that ride their
+scenario route at a constant speed (1–8 m/s, default 4), optionally after a start delay. Speed and start delay can get
+a random offset per scenario (`speedJitter`, `startDelayJitter`) drawn from the seed. Their motion is a function of sim
+time only: they keep riding while the robot is halted and stop only when they hit it. The LiDAR sees them. They are on
+the **`Dynamic`** layer, which the static map export skips; put every moving object on that layer. Their true state is
+published on `/ground_truth/dynamic_objects` for evaluation; the stack must not use it.
+
+**One seed for everything:** every random source draws from its own named stream of `SimRandom`
+(`SimRandom.Stream("lidar")`, …) and recreates it on `SimRandom.Reseeded`. New noise sources (encoders, IMU, cyclist
+spawning) do the same; never use `UnityEngine.Random`. Sensors capture on the absolute sim-time grid `k / rate`, so they
+run in the same phase after every reset. **Tools > Delivery Bot > Check Determinism** (Play mode, CitySim) drives the
+same script three times and checks that seed 42 twice gives bit-identical trajectories and LiDAR scans and seed 43
+different noise.
+
 ## UI layout
 
 | Region | Content |
 | --- | --- |
-| Top left (`LidarSlot`) | LiDAR panel slot |
+| Top left (`LidarSlot`) | LiDAR panel: polar scan plot (raw, filtered or mock; `L` cycles) with tracked obstacles, an arrow to each one's predicted position one step ahead, and the stop zone |
 | Bottom left (`MinimapSlot`) | Minimap panel slot |
-| Right half (`CameraSlot`) | Camera panel slot |
+| Right half (`CameraSlot`) | Camera panel: stereo pair, stereo left, stereo right, false-colour disparity or the side cameras (`V` cycles) |
 | Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
 
 `Assets/DeliveryBot/UI/SimHUD.prefab` provides the Screen Space Overlay canvas and independently replaceable panel slots.
@@ -108,6 +151,12 @@ Its anchored layout scales with the screen at 16:9, 16:10 and 21:9. The panels a
 main camera viewport unchanged. The status bar shows ROS connection and grid-step state; safety and stack health
 show placeholders until `/safety/state` and `/health` providers are available.
 See the [HUD layout and panel integration guide](Assets/DeliveryBot/UI/README.md) for panel setup and validation.
+
+**Planned-path overlay** (`PlanPathOverlay` in CitySim): draws `/plan` as a flat line 5 cm above the ground in the 3D
+view. The plan is cyan, the current step (the next `step_size`, 0.5 m, from the robot's `base_link`) orange, and
+reverse segments are dashed. Parts covered by the robot or buildings show faintly through them. A new `/plan` replaces
+the line; `/grid_step/state` DONE or FAILED clears it. **P** toggles a test path in front of the robot (straight, a
+1.5 m-radius left arc, then reverse) to check the overlay without ROS.
 
 ## Requirements
 
@@ -241,11 +290,29 @@ positive steering = left turn, positive wheel speed = forward.
 | Sensor | Frame | Simulated as |
 | --- | --- | --- |
 | 2D LiDAR | `lidar_link` | raycast fan, 360°, 1° resolution, 0.1–12 m, 10 Hz → `/scan` *(planned)* |
-| Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) *(planned)* |
-| Radar left/right, mono cameras | `radar_*_link`, `mono_*_camera` | frames available in the URDF, not simulated yet |
+| Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 640×480, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) |
+| Side cameras | `mono_left_camera`, `mono_right_camera` (±21.7° outward) | Unity cameras, 640×360, 10 Hz → `/mono/*` (horizontal FOV is a 1.2 rad placeholder) |
+| Radar left/right | `radar_*_link` | frames available in the URDF, not simulated yet |
 
 Sensor rays ignore the robot itself (`Robot` layer). Sensors sit on child "mount" objects under the links, because
 the links are ArticulationBodies.
+
+**Stereo cameras** (`StereoCameraPublisher` on the robot root): it adds a Camera to the two `CameraSensor` mounts and
+renders both on demand at the configured rate. Resolution, vertical FOV, rate and the optional ground-truth depth are
+inspector fields. Both images of a pair carry the same sim-time stamp and are published in the optical frames
+(z forward, x right, y down). `camera_info` is exact: zero distortion, `cx = (W-1)/2`, `cy = (H-1)/2`,
+`fy = (H/2)/tan(vfov/2) = fx`, and `P[3] = -fx * baseline` on the right camera. Other Unity components read
+`LeftTexture` / `RightTexture` (and `PairCaptured`) directly.
+
+**Side cameras** (`SideCameraPublisher` on the robot root): the same render / readback / publish path
+(`SimCameraChannel`) on the `CameraSensor` mounts under `mono_{left,right}_camera`. Resolution, horizontal FOV and rate
+are inspector fields. `camera_info` has zero distortion and no `Tx` (monocular). Both feeds are registered in
+`SideCameraFeeds` for the camera panel.
+
+All cameras capture on the sim-time grid `k / rate` (`SensorCaptureClock`), so at equal rates the side images carry the
+same stamp as the stereo pair of the same capture. **Tools > Delivery Bot > Check Cameras** (in Play mode) checks all of
+them: poses against the URDF, `camera_info`, the reprojection of known points (≤ 1 px), the optional ground-truth depth
+and the shared stamps.
 
 ### Re-import the robot after a URDF change
 
