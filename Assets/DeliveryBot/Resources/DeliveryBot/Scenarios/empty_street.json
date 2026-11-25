@@ -1,0 +1,6 @@
+{
+  "name": "empty_street",
+  "description": "The static city only: no scenario objects.",
+  "staticObstacles": [],
+  "cyclists": []
+}

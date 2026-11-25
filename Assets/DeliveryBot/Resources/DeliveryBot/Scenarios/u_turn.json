@@ -1,0 +1,16 @@
+{
+  "name": "u_turn",
+  "description": "South street closed from house to house: the robot must turn around (R_min 1.25 m, ~10 m road).",
+  "staticObstacles": [
+    {
+      "name": "barrier",
+      "x": -37.0,
+      "y": 0.4,
+      "yaw": 0.0,
+      "length": 0.5,
+      "width": 18.0,
+      "height": 1.0
+    }
+  ],
+  "cyclists": []
+}

@@ -1,0 +1,22 @@
+{
+  "name": "cyclist_crossing",
+  "description": "A cyclist crosses the central intersection along the east-west street.",
+  "staticObstacles": [],
+  "cyclists": [
+    {
+      "name": "cyclist_0",
+      "route": [
+        {
+          "x": -0.5,
+          "y": 40.0
+        },
+        {
+          "x": -0.5,
+          "y": -40.0
+        }
+      ],
+      "speed": 4.0,
+      "startDelay": 0.0
+    }
+  ]
+}
