@@ -82,6 +82,7 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/tf_static` | `tf2_msgs/TFMessage` (sensor frames) | `robot_state_publisher` | |
 | `/odom` | `nav_msgs/Odometry` | Unity → ROS | `odom` → `base_link` |
 | `/scan` | `sensor_msgs/LaserScan` | Unity → ROS | `lidar_link` |
+| `/imu` | `sensor_msgs/Imu` (angular velocity, specific force; no orientation; every physics step) | Unity → ROS | `base_link` |
 | `/scan/filtered` | `sensor_msgs/LaserScan` (from the scan filter; shown in the LiDAR panel) | ROS → Unity | `lidar_link` |
 | `/stereo/{left,right}/image_raw` | `sensor_msgs/Image` (rgb8) | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
 | `/stereo/{left,right}/camera_info` | `sensor_msgs/CameraInfo` | Unity → ROS | `stereo_{left,right}_camera_optical_frame` |
@@ -131,7 +132,7 @@ the **`Dynamic`** layer, which the static map export skips; put every moving obj
 published on `/ground_truth/dynamic_objects` for evaluation; the stack must not use it.
 
 **One seed for everything:** every random source draws from its own named stream of `SimRandom`
-(`SimRandom.Stream("lidar")`, …) and recreates it on `SimRandom.Reseeded`. New noise sources (encoders, IMU, cyclist
+(`SimRandom.Stream("lidar")`, `"imu"`, …) and recreates it on `SimRandom.Reseeded`. New noise sources (encoders, cyclist
 spawning) do the same; never use `UnityEngine.Random`. Sensors capture on the absolute sim-time grid `k / rate`, so they
 run in the same phase after every reset. **Tools > Delivery Bot > Check Determinism** (Play mode, CitySim) drives the
 same script three times and checks that seed 42 twice gives bit-identical trajectories and LiDAR scans and seed 43
@@ -292,6 +293,7 @@ positive steering = left turn, positive wheel speed = forward.
 | 2D LiDAR | `lidar_link` | raycast fan, 360°, 1° resolution, 0.1–12 m, 10 Hz → `/scan` *(planned)* |
 | Stereo cameras | `stereo_left_camera`, `stereo_right_camera` | Unity cameras, 640×480, 10 Hz → `/stereo/*` (vertical FOV is a 50° placeholder) |
 | Side cameras | `mono_left_camera`, `mono_right_camera` (±21.7° outward) | Unity cameras, 640×360, 10 Hz → `/mono/*` (horizontal FOV is a 1.2 rad placeholder) |
+| IMU | `base_link` | `ImuPublisher` on the robot root: angular velocity and specific force (+9.81 m/s² on z at rest) from the base_link pose of consecutive physics steps (about one step of lag), white noise, constant bias and bias random walk per axis (placeholder MEMS values; `noiseFree` turns them off), 50 Hz → `/imu`. Check: **Tools > Delivery Bot > Check IMU** |
 | Radar left/right | `radar_*_link` | frames available in the URDF, not simulated yet |
 
 Sensor rays ignore the robot itself (`Robot` layer). Sensors sit on child "mount" objects under the links, because

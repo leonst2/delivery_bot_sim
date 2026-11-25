@@ -331,6 +331,8 @@ namespace DeliveryBot.Editor
 
             GetOrAdd<DeliveryBotDrive>(robot);
             GetOrAdd<DeliveryBotKeyboardDrive>(robot);
+            // /imu at base_link: on the root next to the drive, which raises PoseReset on teleports.
+            GetOrAdd<ImuPublisher>(robot);
 
             foreach (var (linkName, mountName) in SensorMounts)
             {

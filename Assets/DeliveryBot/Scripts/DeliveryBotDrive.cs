@@ -76,6 +76,12 @@ namespace DeliveryBot
         /// <summary>Raised when any link of the robot starts touching another collider.</summary>
         public event System.Action<Collision> Collided;
 
+        /// <summary>
+        /// Raised after <see cref="ResetPose"/> teleported the robot, with the new base_link pose (Unity world). Anything
+        /// that differentiates the base_link pose over time (the IMU) must restart from it instead of seeing a jump.
+        /// </summary>
+        public event System.Action<Vector3, Quaternion> PoseReset;
+
         ArticulationBody m_SteerL, m_SteerR, m_WheelFL, m_WheelFR, m_WheelRL, m_WheelRR;
         readonly List<ArticulationBody> m_FrontSusp = new List<ArticulationBody>();
         readonly List<ArticulationBody> m_RearSusp = new List<ArticulationBody>();
@@ -323,6 +329,8 @@ namespace DeliveryBot
                 drive.targetVelocity = 0f;
                 body.xDrive = drive;
             }
+
+            PoseReset?.Invoke(position, rotation);
         }
 
         public IReadOnlyList<ArticulationBody> Bodies => m_AllBodies;
