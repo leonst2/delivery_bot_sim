@@ -100,6 +100,7 @@ turn in place. Nav2 uses an Ackermann-feasible planner (Smac Hybrid-A*).
 | `/sim/reset` | service `delivery_bot_interfaces/ResetSim` (robot pose + seed) | ROS → Unity | `map` |
 | `/sim/load_scenario` | service `delivery_bot_interfaces/LoadScenario` (scenario name + seed) | ROS → Unity | `map` |
 | `/sim/collisions` | `delivery_bot_interfaces/CollisionEvent` (every robot contact; wheels on the ground excluded) | Unity → ROS | `map` |
+| `/ground_truth/dynamic_objects` | `delivery_bot_interfaces/TrackedObstacleArray` (true id, position, velocity, radius of the cyclists; 20 Hz; **evaluation only**) | Unity → ROS | `map` |
 
 `/cmd_vel` is `geometry_msgs/Twist`, Nav2's default on Jazzy. Switch both sides to `TwistStamped` if
 `enable_stamped_cmd_vel` is turned on. Unity uses RUF coordinates (right, up, forward) and ROS uses FLU (forward,
@@ -113,13 +114,21 @@ left, up). Convert with the ROS-TCP-Connector helpers (`To<FLU>()` / `From<FLU>(
   definitions are JSON files in `Assets/DeliveryBot/Resources/DeliveryBot/Scenarios/` (map frame; static boxes and
   cyclist routes). Benchmark suite v1: `empty_street`, `static_obstacles`, `narrow_passage`, `u_turn`,
   `cyclist_crossing`, `cyclist_oncoming`, `cyclist_overtaking`, `multi_stop`. The static ones are on the street south
-  of the central intersection. The cyclist scenarios answer `success = false` until the dynamic-object spawner (#16)
-  implements `IDynamicObjectSpawner`.
+  of the central intersection. The cyclist scenarios assume the robot drives south in the right-hand lane (map
+  y ≈ 2): a cyclist crossing the central intersection, one oncoming head-on and a faster one overtaking from behind.
 - **`/sim/reset`** removes dynamic objects, sets the seed and places `base_link` at the requested `map` pose (yaw only).
   It answers once the robot has been at rest for 10 physics steps (about 0.65 s), or with `success = false` after 5 s.
-  Scenario objects stay. A runner loads the scenario once, then resets before every run.
+  Scenario boxes stay; cyclists are removed. **Per run, call `/sim/reset` first, then `/sim/load_scenario`**: loading
+  spawns the cyclists, and their routes start at that moment.
 - **`/sim/collisions`** reports every contact between a robot link and another object, except wheels rolling on the
   ground.
+
+**Cyclists** (`DynamicObjectSpawner` in CitySim, `CyclistAgent`): kinematic bodies (1.8 × 0.6 × 1.7 m) that ride their
+scenario route at a constant speed (1–8 m/s, default 4), optionally after a start delay. Speed and start delay can get
+a random offset per scenario (`speedJitter`, `startDelayJitter`) drawn from the seed. Their motion is a function of sim
+time only: they keep riding while the robot is halted and stop only when they hit it. The LiDAR sees them. They are on
+the **`Dynamic`** layer, which the static map export skips; put every moving object on that layer. Their true state is
+published on `/ground_truth/dynamic_objects` for evaluation; the stack must not use it.
 
 **One seed for everything:** every random source draws from its own named stream of `SimRandom`
 (`SimRandom.Stream("lidar")`, …) and recreates it on `SimRandom.Reseeded`. New noise sources (encoders, IMU, cyclist
