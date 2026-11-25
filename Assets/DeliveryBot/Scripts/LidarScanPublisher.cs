@@ -53,7 +53,7 @@ public class LidarScanPublisher : MonoBehaviour
     float angleMin, angleIncrement;
     float[] ranges;
     Vector3[] localDirs; // precomputed beam directions in the local frame
-    double nextScanTime;
+    SensorCaptureClock clock; // scans on the shared sim-time grid k / rateHz, like the cameras
 
     void Awake()
     {
@@ -76,7 +76,6 @@ public class LidarScanPublisher : MonoBehaviour
     {
         ros = ROSConnection.GetOrCreateInstance();
         ros.RegisterPublisher<LaserScanMsg>(topic);
-        nextScanTime = Time.fixedTimeAsDouble;
     }
 
     void OnValidate()
@@ -109,10 +108,7 @@ public class LidarScanPublisher : MonoBehaviour
     void FixedUpdate()
     {
         double now = Time.fixedTimeAsDouble;
-        if (now < nextScanTime) return;
-        nextScanTime += 1.0 / rateHz;
-        if (nextScanTime < now) nextScanTime = now + 1.0 / rateHz; // don't try to catch up after a hitch
-
+        if (!clock.IsDue(now, rateHz)) return;
         Scan(now);
     }
 
