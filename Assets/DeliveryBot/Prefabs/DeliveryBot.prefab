@@ -3325,6 +3325,7 @@ GameObject:
   - component: {fileID: 5571697653880976331}
   - component: {fileID: 5232284675103527488}
   - component: {fileID: 354129557256806430}
+  - component: {fileID: 4907972016770048151}
   m_Layer: 8
   m_Name: DeliveryBot
   m_TagString: robot
@@ -3495,6 +3496,29 @@ MonoBehaviour:
     white: {x: 0.05, y: 0.05, z: 0.05}
     bias: {x: 0, y: 0, z: 0}
     biasRandomWalk: {x: 0.001, y: 0.001, z: 0.001}
+--- !u!114 &4907972016770048151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4397256063833240777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73dc6dbc6ec322345b898161647f0382, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBot.ProprioceptionPublisher
+  jointStatesTopic: /joint_states
+  groundTruthTopic: /ground_truth/odom
+  mapFrame: map
+  baseFrame: base_link
+  baseLink: {fileID: 0}
+  invertWheelSigns: 0
+  invertSteeringSigns: 0
+  noiseFree: 0
+  wheelVelocitySigma: 0.05
+  encoderTicksPerRev: 1024
+  steeringSigma: 0.002
 --- !u!1 &4548038261564509272
 GameObject:
   m_ObjectHideFlags: 0
