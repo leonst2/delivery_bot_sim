@@ -143,7 +143,7 @@ different noise.
 | Region | Content |
 | --- | --- |
 | Top left (`LidarSlot`) | LiDAR panel: polar scan plot (raw, filtered or mock; `L` cycles) with tracked obstacles, an arrow to each one's predicted position one step ahead, and the stop zone |
-| Bottom left (`MinimapSlot`) | Minimap panel slot |
+| Bottom left (`MinimapSlot`) | Minimap panel: the whole city from above with the true and the estimated pose (`/pose`), goal, cyclists, `/plan` and the global costmap as a toggleable overlay (`M`); clicking publishes `/goal_pose` (drag sets the heading) |
 | Right half (`CameraSlot`) | Camera panel: stereo pair, stereo left, stereo right, false-colour disparity or the side cameras (`V` cycles) |
 | Remaining centre-left area | Unobstructed 3D view; the planned-path overlay remains visible |
 
